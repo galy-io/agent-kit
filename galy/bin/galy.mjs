@@ -1,39 +1,41 @@
 #!/usr/bin/env node
 // galy — cross-platform CLI for the Galy project-management API.
 //
-// Talks REST to /api/pm/* on your Galy endpoint. Mirrors the MCP verbs your
-// Claude Code uses, but is shell-friendly: list/search work items, and pull/push
-// the large markdown bodies of briefs and specs as local files so you never have
-// to shove a whole body through a tool argument.
+// Talks REST to /api/pm/* on your Galy endpoint. Mirrors the read side of the MCP
+// verbs your Claude Code uses, but is shell-friendly: search work items, read
+// compact JSON cards, and pull/push the large markdown body of a brief or spec as
+// a local file so you never shove a whole body through a tool argument.
 //
 // Strictly outward: this CLI reads strategy/briefs/specs and writes back their
-// text (bodies, statuses). It never sends your source code — there is no verb
-// that reads a repository file.
+// text (bodies). It never sends your source code — there is no verb that reads a
+// repository file.
 //
 // Config resolution (first hit wins per field):
 //   env GALY_ENDPOINT / GALY_TOKEN
 //   .galy/config.json  ({ "endpoint": "...", "token": "..." }) searched upward from cwd
 //
-// Content buffer: .tmp/galy-content/<type>/<id>.md with fields delimited by
-//   <!-- @field <name> -->
+// Content buffer: .tmp/galy-content/<type>/<id>.md — raw markdown whose sections are
+//   delimited by <!-- @field <name> -->. The server composes/parses it; the CLI
+//   round-trips the document verbatim.
+//
+// Routes (gooal PmContentController):
+//   GET  /api/pm/search?q=<q>              -> { briefs, specs }
+//   GET  /api/pm/brief/<id>                -> { brief, user_stories }
+//   GET  /api/pm/spec/<id>                 -> { spec, phases, risks, acceptance_tests }
+//   GET  /api/pm/content/<type>/<id>/body  -> text/markdown
+//   PUT  /api/pm/content/<type>/<id>/body  <- { "Body": "<markdown>" }
 //
 // Commands:
-//   galy whoami
-//   galy search <query> [--type brief|spec] [--status <s>] [--limit <n>]
+//   galy search <query>
 //   galy brief <id>
-//   galy brief list [--status <s>] [--domain <d>] [--query <q>] [--limit <n>]
 //   galy spec <id>
-//   galy spec list [--brief <id>] [--status <s>] [--query <q>] [--limit <n>]
 //   galy content pull <type> <id>      # type = feature-brief | feature-spec
 //   galy content push <type> <id>
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-const CONTENT_FIELDS = {
-  "feature-brief": ["problem", "vision", "executive"],
-  "feature-spec": ["executive", "problem", "solution"],
-};
+const TYPES = new Set(["feature-brief", "feature-spec"]);
 
 // ── Config ────────────────────────────────────────────────────────────────
 function findConfig(startDir) {
@@ -54,30 +56,34 @@ function loadConfig() {
     try { fromFile = JSON.parse(readFileSync(path, "utf8")); }
     catch (e) { die(`Cannot parse ${path}: ${e.message}`); }
   }
-  const endpoint = process.env.GALY_ENDPOINT || fromFile.endpoint;
+  let endpoint = process.env.GALY_ENDPOINT || fromFile.endpoint;
   const token = process.env.GALY_TOKEN || fromFile.token;
   if (!endpoint) die("No endpoint. Set GALY_ENDPOINT or .galy/config.json { \"endpoint\": ... }.");
   if (!token) die("No token. Set GALY_TOKEN or .galy/config.json { \"token\": ... }. Get one from galy.io → Settings → Connect your assistant.");
-  return { endpoint: endpoint.replace(/\/+$/, ""), token };
+  endpoint = endpoint.replace(/\/+$/, "").replace(/\/mcp$/i, ""); // tolerate a pasted MCP url
+  return { endpoint, token };
 }
 
 // ── HTTP ──────────────────────────────────────────────────────────────────
-async function api(method, path, body) {
+async function request(method, path, { json, raw } = {}) {
   const { endpoint, token } = loadConfig();
   const res = await fetch(`${endpoint}${path}`, {
     method,
     headers: {
       "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "Accept": "application/json",
+      "Accept": raw ? "text/markdown, text/plain, */*" : "application/json",
+      ...(json ? { "Content-Type": "application/json" } : {}),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: json ? JSON.stringify(json) : undefined,
   });
   const text = await res.text();
-  let json;
-  try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
-  if (!res.ok) die(`${method} ${path} → HTTP ${res.status}: ${json.error || text.slice(0, 300)}`);
-  return json;
+  if (!res.ok) {
+    let msg = text.slice(0, 300);
+    try { msg = JSON.parse(text).error || msg; } catch { /* keep raw */ }
+    if (res.status === 401) msg = "unauthorized — check your token (galy.io → Settings → Connect your assistant)";
+    die(`${method} ${path} → HTTP ${res.status}: ${msg}`);
+  }
+  return raw ? text : (text ? JSON.parse(text) : {});
 }
 
 // ── Content buffer ──────────────────────────────────────────────────────────
@@ -85,86 +91,46 @@ function bufferPath(type, id) {
   return join(process.cwd(), ".tmp", "galy-content", type, `${id}.md`);
 }
 
-function serializeFields(type, fields) {
-  const order = CONTENT_FIELDS[type] || Object.keys(fields);
-  const names = order.filter((n) => n in fields).concat(Object.keys(fields).filter((n) => !order.includes(n)));
-  return names.map((n) => `<!-- @field ${n} -->\n${(fields[n] ?? "").trim()}\n`).join("\n");
-}
-
-function parseFields(text) {
-  const fields = {};
-  const re = /<!--\s*@field\s+([\w-]+)\s*-->/g;
-  const marks = [];
-  let m;
-  while ((m = re.exec(text))) marks.push({ name: m[1], start: m.index, end: re.lastIndex });
-  for (let i = 0; i < marks.length; i++) {
-    const body = text.slice(marks[i].end, i + 1 < marks.length ? marks[i + 1].start : text.length);
-    fields[marks[i].name] = body.trim();
-  }
-  return fields;
-}
-
 // ── Commands ──────────────────────────────────────────────────────────────
-async function cmdWhoami() {
-  const r = await api("GET", "/api/pm/whoami");
-  print(r);
-}
-
 async function cmdSearch(args) {
   const q = args._[0];
-  if (!q) die("Usage: galy search <query> [--type brief|spec] [--status <s>] [--limit <n>]");
-  const params = new URLSearchParams({ q });
-  if (args.type) params.set("type", args.type);
-  if (args.status) params.set("status", args.status);
-  if (args.limit) params.set("limit", args.limit);
-  print(await api("GET", `/api/pm/search?${params}`));
+  if (!q) die("Usage: galy search <query>");
+  print(await request("GET", `/api/pm/search?q=${encodeURIComponent(q)}`));
 }
 
 async function cmdBrief(args) {
-  const first = args._[0];
-  if (first === "list") {
-    const params = new URLSearchParams();
-    for (const k of ["status", "domain", "query", "limit"]) if (args[k]) params.set(k, args[k]);
-    return print(await api("GET", `/api/pm/briefs?${params}`));
-  }
-  if (!first) die("Usage: galy brief <id> | galy brief list [--status ...] [--domain ...]");
-  print(await api("GET", `/api/pm/briefs/${first}`));
+  const id = args._[0];
+  if (!id) die("Usage: galy brief <id>");
+  print(await request("GET", `/api/pm/brief/${encodeURIComponent(id)}`));
 }
 
 async function cmdSpec(args) {
-  const first = args._[0];
-  if (first === "list") {
-    const params = new URLSearchParams();
-    if (args.brief) params.set("briefId", args.brief);
-    for (const k of ["status", "query", "limit"]) if (args[k]) params.set(k, args[k]);
-    return print(await api("GET", `/api/pm/specs?${params}`));
-  }
-  if (!first) die("Usage: galy spec <id> | galy spec list [--brief <id>] [--status ...]");
-  print(await api("GET", `/api/pm/specs/${first}`));
+  const id = args._[0];
+  if (!id) die("Usage: galy spec <id>");
+  print(await request("GET", `/api/pm/spec/${encodeURIComponent(id)}`));
 }
 
 async function cmdContent(args) {
   const [action, type, id] = args._;
-  if (!["pull", "push"].includes(action) || !type || !id) {
+  if (!["pull", "push"].includes(action) || !TYPES.has(type) || !id) {
     die("Usage: galy content pull|push <type> <id>   (type = feature-brief | feature-spec)");
   }
   const path = bufferPath(type, id);
+  const route = `/api/pm/content/${type}/${encodeURIComponent(id)}/body`;
 
   if (action === "pull") {
-    const r = await api("GET", `/api/pm/content/${type}/${id}`);
-    const fields = r.fields || r;
+    const body = await request("GET", route, { raw: true });
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, serializeFields(type, fields), "utf8");
+    writeFileSync(path, body, "utf8");
     console.log(`Pulled ${type} ${id} → ${path}`);
     return;
   }
 
-  // push
+  // push — send the buffer verbatim; the server parses the <!-- @field --> sections.
   if (!existsSync(path)) die(`No buffer at ${path}. Run 'galy content pull ${type} ${id}' first.`);
-  const fields = parseFields(readFileSync(path, "utf8"));
-  if (Object.keys(fields).length === 0) die(`No <!-- @field ... --> sections found in ${path}.`);
-  await api("PUT", `/api/pm/content/${type}/${id}`, { fields });
-  console.log(`Pushed ${type} ${id} (${Object.keys(fields).join(", ")})`);
+  const body = readFileSync(path, "utf8");
+  await request("PUT", route, { json: { Body: body }, raw: true });
+  console.log(`Pushed ${type} ${id}`);
 }
 
 // ── arg parsing / output ────────────────────────────────────────────────────
@@ -187,12 +153,9 @@ function die(msg) { console.error(`galy: ${msg}`); process.exit(1); }
 
 const HELP = `galy — Galy project-management CLI
 
-  galy whoami
-  galy search <query> [--type brief|spec] [--status <s>] [--limit <n>]
-  galy brief <id>
-  galy brief list [--status <s>] [--domain <d>] [--query <q>] [--limit <n>]
-  galy spec <id>
-  galy spec list [--brief <id>] [--status <s>] [--query <q>] [--limit <n>]
+  galy search <query>               # briefs + specs matching the query
+  galy brief <id>                   # a brief with its user stories
+  galy spec <id>                    # a spec with its phases, risks, acceptance tests
   galy content pull <type> <id>     # type = feature-brief | feature-spec
   galy content push <type> <id>
 
@@ -203,7 +166,6 @@ async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   const args = parseArgs(rest);
   switch (cmd) {
-    case "whoami": return cmdWhoami();
     case "search": return cmdSearch(args);
     case "brief": return cmdBrief(args);
     case "spec": return cmdSpec(args);

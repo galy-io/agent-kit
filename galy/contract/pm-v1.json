@@ -1,7 +1,18 @@
 {
   "contract": "galy-pm-v1",
   "description": "The project-management verbs the Galy MCP server exposes to your Claude Code. Strictly outward: your assistant reads strategy, briefs and specs and writes back statuses, plans and follow-ups. No verb accepts source code, a diff, or file content — Galy never sees your repository.",
-  "transport": { "type": "http", "url": "https://gooal-prod.azurewebsites.net/mcp", "auth": "Bearer token in the Authorization header (posted by galy-setup)" },
+  "transport": { "type": "http", "url": "https://gooal-prod.azurewebsites.net/mcp", "auth": "Bearer token in the Authorization header (posted by galy-setup); token is looked up by its SHA-256, so it never travels or is stored in clear on the server" },
+  "rest_api": {
+    "description": "The REST surface the `galy` CLI uses (gooal PmContentController), same Bearer auth. Read side only + the markdown body round-trip. Content bodies are raw markdown whose sections are delimited by <!-- @field <name> --> and composed/parsed server-side.",
+    "base": "https://gooal-prod.azurewebsites.net",
+    "routes": [
+      { "method": "GET", "path": "/api/pm/search?q=<q>", "returns": "{ briefs: [summary], specs: [summary] }" },
+      { "method": "GET", "path": "/api/pm/brief/{id}", "returns": "{ brief, user_stories }" },
+      { "method": "GET", "path": "/api/pm/spec/{id}", "returns": "{ spec, phases, risks, acceptance_tests }" },
+      { "method": "GET", "path": "/api/pm/content/{type}/{id}/body", "returns": "text/markdown (fields: brief = executive/problem/vision/hors-scope, spec = executive/problem/solution)" },
+      { "method": "PUT", "path": "/api/pm/content/{type}/{id}/body", "body": "{ \"Body\": \"<markdown>\" }", "note": "a field absent from the submitted markdown is left unchanged; type = feature-brief | feature-spec" }
+    ]
+  },
   "conventions": {
     "return_envelope": "Every tool returns a JSON string { success: bool, ... } and { success: false, error: string } on failure.",
     "bodies": "Long markdown bodies (brief problem/vision, spec executive summary/problem/solution) are never passed as tool arguments — read and write them with the `galy content pull|push <type> <id>` CLI. Tools carry metadata only (title, phases, status, risks).",

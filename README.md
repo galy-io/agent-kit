@@ -68,12 +68,12 @@ documented extension point, not a gap.
 
 ## The `galy` CLI
 
-A shell-friendly companion to the MCP tools — list and search work items, and pull/push the large
-markdown bodies of briefs and specs as local files:
+A shell-friendly companion to the MCP tools — search work items, read compact JSON cards, and pull/push
+the large markdown bodies of briefs and specs as local files:
 
 ```
-galy whoami
-galy search "seller onboarding" --type brief
+galy search "seller onboarding"
+galy brief 12
 galy spec 42
 galy content pull feature-spec 42     # → .tmp/galy-content/feature-spec/42.md
 galy content push feature-spec 42     # after you edit the buffer
@@ -91,9 +91,10 @@ galy/
   .mcp.json                       # Galy MCP endpoint (Bearer auth set by galy-setup)
   skills/<name>/SKILL.md          # the 10 skills
   instructions/                   # shared conventions the skills reference
-  contract/pm-v1.json             # the project-management tool contract
-  contract/conformance/           # the outward-only conformance suite
+  contract/pm-v1.json             # the project-management tool + REST contract
+  contract/conformance/           # the outward-only conformance suite (MCP + REST)
   bin/galy.mjs                    # the galy CLI
+setup/galy-setup                  # npx galy-setup <token> — one-command onboarding
 ```
 
 ## License

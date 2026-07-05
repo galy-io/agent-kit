@@ -127,30 +127,15 @@ function parseRpc(text) {
   return last;
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
-async function main() {
-  const writeMode = process.argv.includes("--write");
-  const url = process.env.GALY_MCP_URL || process.env.GALY_ENDPOINT;
-  const token = process.env.GALY_TOKEN;
-
-  console.log(`\nGaly PM contract conformance — ${CONTRACT.contract}\n`);
-
-  console.log("Static checks (contract file):");
-  scanForbidden(CONTRACT.tools, "contract");
-
-  if (!url || !token) {
-    console.log("\nLive checks skipped — set GALY_MCP_URL and GALY_TOKEN to exercise the endpoint.\n");
-    return summarize();
-  }
-
-  console.log(`\nLive checks against ${url}:`);
+// ── Live MCP layer (the mcp__galy__* verbs) ──────────────────────────────────
+async function runMcp(url, token, writeMode) {
+  console.log(`\nLive MCP checks against ${url}:`);
   const client = new McpClient(url, token);
   try {
     await client.initialize();
     record("initialize handshake", true);
   } catch (e) {
-    record("initialize handshake", false, e.message);
-    return summarize();
+    return record("initialize handshake", false, e.message);
   }
 
   let liveTools = [];
@@ -158,8 +143,7 @@ async function main() {
     liveTools = await client.listTools();
     record("tools/list", true, `${liveTools.length} tools advertised`);
   } catch (e) {
-    record("tools/list", false, e.message);
-    return summarize();
+    return record("tools/list", false, e.message);
   }
 
   // Re-check the invariant against the LIVE schemas, not just the contract file.
@@ -187,12 +171,66 @@ async function main() {
   }
 
   if (writeMode) {
-    console.log("\n--write passed but write exercises are intentionally not implemented here:");
-    console.log("  they would mutate the connected Galy workspace. Validate write verbs");
-    console.log("  through their live schema (checked above) and a disposable sandbox brief.\n");
-  } else {
-    console.log("\nWrite verbs validated by schema only (not invoked — they mutate the workspace).");
+    console.log("  --write: write exercises are intentionally not run — they mutate the workspace.");
   }
+}
+
+// ── Live REST layer (the routes the galy CLI uses) ───────────────────────────
+async function runRest(base, token) {
+  console.log(`\nLive REST checks against ${base}:`);
+  const routes = (CONTRACT.rest_api && CONTRACT.rest_api.routes) || [];
+  // Bearer format check — the docs say a 64-hex token.
+  record("token looks like a 64-hex string", /^[0-9a-f]{64}$/i.test(token),
+    /^[0-9a-f]{64}$/i.test(token) ? undefined : "not 64 hex chars (may still be valid)");
+
+  // Smoke the read route that needs no id.
+  try {
+    const res = await fetch(`${base}/api/pm/search?q=ping`, {
+      headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      record("GET /api/pm/search?q=ping", false, `HTTP ${res.status}: ${text.slice(0, 120)}`);
+    } else {
+      const json = JSON.parse(text);
+      const ok = Array.isArray(json.briefs) && Array.isArray(json.specs);
+      record("GET /api/pm/search?q=ping", ok, ok ? undefined : "expected { briefs:[], specs:[] }");
+    }
+  } catch (e) {
+    record("GET /api/pm/search?q=ping", false, e.message);
+  }
+
+  // Reject an unauthenticated call — the outward API must require the token.
+  try {
+    const res = await fetch(`${base}/api/pm/search?q=ping`, { headers: { "Accept": "application/json" } });
+    record("unauthenticated search is rejected", res.status === 401 || res.status === 403,
+      `HTTP ${res.status}`);
+  } catch (e) {
+    record("unauthenticated search is rejected", false, e.message);
+  }
+
+  console.log(`  Documented routes (id-scoped ones not smoked): ${routes.map((r) => r.path).join(", ") || "none in contract"}`);
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────────
+async function main() {
+  const writeMode = process.argv.includes("--write");
+  const token = process.env.GALY_TOKEN;
+  const mcpUrl = process.env.GALY_MCP_URL || (process.env.GALY_ENDPOINT ? `${process.env.GALY_ENDPOINT.replace(/\/+$/, "")}/mcp` : null);
+  const restBase = (process.env.GALY_ENDPOINT || process.env.GALY_MCP_URL || "").replace(/\/+$/, "").replace(/\/mcp$/i, "");
+
+  console.log(`\nGaly PM contract conformance — ${CONTRACT.contract}\n`);
+
+  console.log("Static checks (contract file):");
+  scanForbidden(CONTRACT.tools, "contract");
+
+  if (!token || (!mcpUrl && !restBase)) {
+    console.log("\nLive checks skipped — set GALY_ENDPOINT (or GALY_MCP_URL) and GALY_TOKEN to exercise the endpoint.\n");
+    return summarize();
+  }
+
+  if (mcpUrl) await runMcp(mcpUrl, token, writeMode);
+  if (restBase) await runRest(restBase, token);
 
   summarize();
 }

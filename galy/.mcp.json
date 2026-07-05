@@ -2,7 +2,10 @@
   "mcpServers": {
     "galy": {
       "type": "http",
-      "url": "https://gooal-prod.azurewebsites.net/mcp"
+      "url": "https://gooal-prod.azurewebsites.net/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GALY_TOKEN}"
+      }
     }
   }
 }
