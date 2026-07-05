@@ -1,0 +1,349 @@
+{
+  "contract": "galy-pm-v1",
+  "description": "The project-management verbs the Galy MCP server exposes to your Claude Code. Strictly outward: your assistant reads strategy, briefs and specs and writes back statuses, plans and follow-ups. No verb accepts source code, a diff, or file content — Galy never sees your repository.",
+  "transport": { "type": "http", "url": "https://gooal-prod.azurewebsites.net/mcp", "auth": "Bearer token in the Authorization header (posted by galy-setup)" },
+  "conventions": {
+    "return_envelope": "Every tool returns a JSON string { success: bool, ... } and { success: false, error: string } on failure.",
+    "bodies": "Long markdown bodies (brief problem/vision, spec executive summary/problem/solution) are never passed as tool arguments — read and write them with the `galy content pull|push <type> <id>` CLI. Tools carry metadata only (title, phases, status, risks).",
+    "forbidden_fields": "No tool declares a parameter named code, diff, patch, file_content or source_code. The flow is outward-only."
+  },
+  "tools": [
+    {
+      "name": "whoami",
+      "kind": "read",
+      "description": "Identify the authenticated Galy user for this session (resolved from the token, no parameter). Use it to get the userId that feature_spec_pick and other per-user tools expect.",
+      "params": [],
+      "returns": { "success": "bool", "user_id": "int", "email": "string", "login": "string", "full_name": "string", "roles": "string[]", "is_active": "bool" }
+    },
+
+    {
+      "name": "strategy_list_periods",
+      "kind": "read",
+      "description": "List all strategy periods (annual, quarterly).",
+      "params": [
+        { "name": "periodType", "type": "string", "required": false, "description": "Filter: 'annual' or 'quarterly'." }
+      ],
+      "returns": { "success": "bool", "total": "int", "periods": "[{ id, name, period_type, start_date, end_date, parent_period_id, parent_period_name, child_count }]" }
+    },
+    {
+      "name": "strategy_navigate_children",
+      "kind": "read",
+      "description": "Drill down one level (or up to depth=3) inside the objectives tree without loading the whole strategy. Pass periodId for the period's root objectives, OR objectiveId for that objective's children. Mutually exclusive.",
+      "params": [
+        { "name": "periodId", "type": "int", "required": false, "description": "List the period's root objectives. Required if objectiveId is omitted." },
+        { "name": "objectiveId", "type": "int", "required": false, "description": "List this objective's direct children. Required if periodId is omitted." },
+        { "name": "depth", "type": "int", "required": false, "default": 1, "description": "Levels to expand: 1..3 (hard cap)." },
+        { "name": "includeKrs", "type": "bool", "required": false, "default": false, "description": "Include key results per objective." }
+      ],
+      "returns": { "success": "bool", "period_id": "int?", "objective_id": "int?", "depth": "int", "total": "int", "items": "[{ id, title, icon, objective_type, parent_objective_id, is_linked, computed_progress, child_count, has_children, key_result_count, key_results? }]" }
+    },
+    {
+      "name": "strategy_get_objective_breadcrumb",
+      "kind": "read",
+      "description": "Return the parent chain of an objective from root to leaf, one node per level. Use it to build the objective header of a spec without loading the whole strategy.",
+      "params": [
+        { "name": "objectiveId", "type": "int", "required": true, "description": "Objective whose ancestor chain we want." },
+        { "name": "includeVision", "type": "bool", "required": false, "default": false, "description": "Include the top ambition/vision tier. Default false (stop at the annual root)." }
+      ],
+      "returns": { "success": "bool", "objective_id": "int", "chain": "[{ id, title, icon, objective_type, period_id, period_name }]" }
+    },
+
+    {
+      "name": "feature_brief_create",
+      "kind": "write",
+      "description": "Create a new feature brief (business framing: title, domain, objective). Returns the new brief id. Write the body (problem/vision/executive summary) with `galy content push feature-brief <id>`, not as arguments.",
+      "params": [
+        { "name": "title", "type": "string", "required": true },
+        { "name": "domain", "type": "string", "required": false, "default": "product", "description": "marketing | product | internal | editorial" },
+        { "name": "periodId", "type": "int", "required": false },
+        { "name": "objectiveId", "type": "int", "required": false },
+        { "name": "ownerUserId", "type": "int", "required": false, "description": "Omit to default to the authenticated user." },
+        { "name": "nextFollowupDate", "type": "string", "required": false, "description": "ISO YYYY-MM-DD." }
+      ],
+      "returns": { "success": "bool", "brief_id": "int" }
+    },
+    {
+      "name": "feature_brief_get",
+      "kind": "read",
+      "description": "Get a feature brief by id, with linked objectives, child specs, owner/team names.",
+      "params": [ { "name": "briefId", "type": "int", "required": true } ],
+      "returns": { "success": "bool", "brief": "object" }
+    },
+    {
+      "name": "feature_brief_list",
+      "kind": "read",
+      "description": "List feature briefs with optional filters (period, owner, status, domain, keyword, date windows). Metadata only — no body.",
+      "params": [
+        { "name": "periodId", "type": "int", "required": false },
+        { "name": "ownerUserId", "type": "int", "required": false },
+        { "name": "statusFilter", "type": "string", "required": false, "description": "Draft | Accepted | InProgress | Done | Canceled" },
+        { "name": "domainFilter", "type": "string", "required": false },
+        { "name": "query", "type": "string", "required": false, "description": "Keyword search (title + body, case-insensitive)." },
+        { "name": "take", "type": "int", "required": false, "default": 60, "description": "Max 150." }
+      ],
+      "returns": { "success": "bool", "total": "int", "returned": "int", "truncated": "bool", "briefs": "object[]" }
+    },
+    {
+      "name": "feature_brief_update",
+      "kind": "write",
+      "description": "Update brief metadata (title/domain/status/priority/objective/nextFollowup). Pass null to leave a field unchanged. For the body, use the content CLI.",
+      "params": [
+        { "name": "briefId", "type": "int", "required": true },
+        { "name": "title", "type": "string", "required": false },
+        { "name": "domain", "type": "string", "required": false },
+        { "name": "status", "type": "string", "required": false },
+        { "name": "priority", "type": "string", "required": false },
+        { "name": "nextFollowupDate", "type": "string", "required": false },
+        { "name": "objectiveId", "type": "int", "required": false }
+      ],
+      "returns": { "success": "bool" }
+    },
+    {
+      "name": "feature_brief_add_user_story",
+      "kind": "write",
+      "description": "Add a business user story to a brief (persona / action / benefit). A brief carries no implementation effort.",
+      "params": [
+        { "name": "briefId", "type": "int", "required": true },
+        { "name": "persona", "type": "string", "required": true },
+        { "name": "action", "type": "string", "required": true },
+        { "name": "benefit", "type": "string", "required": true },
+        { "name": "priority", "type": "string", "required": false, "default": "P1", "description": "P0 | P1 | P2" }
+      ],
+      "returns": { "success": "bool", "user_story_id": "int" }
+    },
+
+    {
+      "name": "feature_spec_create",
+      "kind": "write",
+      "description": "Create a technical spec under a brief (1..N specs per brief). Write the body with `galy content push feature-spec <id>`, not as arguments.",
+      "params": [
+        { "name": "featureBriefId", "type": "int", "required": true },
+        { "name": "title", "type": "string", "required": true },
+        { "name": "scope", "type": "string", "required": false, "default": "full", "description": "front | back | batch | mcp | full" },
+        { "name": "category", "type": "string", "required": false, "default": "backoffice" },
+        { "name": "initialEstimateHours", "type": "decimal", "required": false }
+      ],
+      "returns": { "success": "bool", "spec_id": "int" }
+    },
+    {
+      "name": "feature_spec_get",
+      "kind": "read",
+      "description": "Get a spec by id, with phases, risks, acceptance tests, lead name.",
+      "params": [ { "name": "specId", "type": "int", "required": true } ],
+      "returns": { "success": "bool", "spec": "object" }
+    },
+    {
+      "name": "feature_spec_list",
+      "kind": "read",
+      "description": "List specs with optional filters (brief, status, lead, keyword, date windows). Metadata only — no body, no nested phases/risks.",
+      "params": [
+        { "name": "featureBriefId", "type": "int", "required": false },
+        { "name": "statusFilter", "type": "string", "required": false },
+        { "name": "leadUserId", "type": "int", "required": false },
+        { "name": "query", "type": "string", "required": false },
+        { "name": "take", "type": "int", "required": false, "default": 60, "description": "Max 150." }
+      ],
+      "returns": { "success": "bool", "total": "int", "returned": "int", "truncated": "bool", "specs": "object[]" }
+    },
+    {
+      "name": "feature_spec_pick",
+      "kind": "write",
+      "description": "Atomically claim a spec for a user (lead = user, status = InProgress). success=false if already claimed by another user.",
+      "params": [
+        { "name": "specId", "type": "int", "required": true },
+        { "name": "userId", "type": "int", "required": false, "description": "Omit to default to the authenticated user." }
+      ],
+      "returns": { "success": "bool", "current_lead_user_id": "int?", "current_lead_name": "string?", "current_status": "string?" }
+    },
+    {
+      "name": "feature_spec_update",
+      "kind": "write",
+      "description": "Update spec metadata (title/scope/category/status/priority/estimates) or reassign to another brief. Pass null to leave a field unchanged. For the body, use the content CLI.",
+      "params": [
+        { "name": "specId", "type": "int", "required": true },
+        { "name": "title", "type": "string", "required": false },
+        { "name": "scope", "type": "string", "required": false },
+        { "name": "category", "type": "string", "required": false },
+        { "name": "status", "type": "string", "required": false, "description": "NotStarted | InProgress | Review | Done | Canceled" },
+        { "name": "priority", "type": "string", "required": false },
+        { "name": "initialEstimateHours", "type": "decimal", "required": false },
+        { "name": "currentEstimateHours", "type": "decimal", "required": false },
+        { "name": "featureBriefId", "type": "int", "required": false }
+      ],
+      "returns": { "success": "bool" }
+    },
+    {
+      "name": "feature_spec_complete",
+      "kind": "write",
+      "description": "Mark a whole spec Done (status = Done, done_at = now). Optionally store the URL of the delivered change (e.g. your PR).",
+      "params": [
+        { "name": "specId", "type": "int", "required": true },
+        { "name": "prUrl", "type": "string", "required": false, "description": "URL of the delivered change on your side (optional)." }
+      ],
+      "returns": { "success": "bool" }
+    },
+    {
+      "name": "feature_spec_add_phase",
+      "kind": "write",
+      "description": "Add an implementation phase to a spec (title + plan + estimate).",
+      "params": [
+        { "name": "specId", "type": "int", "required": true },
+        { "name": "title", "type": "string", "required": true },
+        { "name": "objectiveMd", "type": "string", "required": false },
+        { "name": "actionPlanMd", "type": "string", "required": false },
+        { "name": "validationCriterionMd", "type": "string", "required": false },
+        { "name": "estimateHours", "type": "decimal", "required": false }
+      ],
+      "returns": { "success": "bool", "phase_id": "int" }
+    },
+    {
+      "name": "feature_spec_update_phase",
+      "kind": "write",
+      "description": "Edit an existing phase (amend/correct after creation). Pass null to leave a field unchanged; empty string clears a markdown field. Use feature_spec_set_phase_status for status.",
+      "params": [
+        { "name": "phaseId", "type": "int", "required": true },
+        { "name": "title", "type": "string", "required": false },
+        { "name": "objectiveMd", "type": "string", "required": false },
+        { "name": "actionPlanMd", "type": "string", "required": false },
+        { "name": "validationCriterionMd", "type": "string", "required": false },
+        { "name": "estimateHours", "type": "decimal", "required": false },
+        { "name": "rafHours", "type": "decimal", "required": false }
+      ],
+      "returns": { "success": "bool" }
+    },
+    {
+      "name": "feature_spec_set_phase_status",
+      "kind": "write",
+      "description": "Mark a phase NotStarted | InProgress | Done. A delivery URL is stored when Done.",
+      "params": [
+        { "name": "phaseId", "type": "int", "required": true },
+        { "name": "status", "type": "string", "required": true, "description": "NotStarted | InProgress | Done" },
+        { "name": "prUrl", "type": "string", "required": false, "description": "Delivery URL, used when status=Done." }
+      ],
+      "returns": { "success": "bool" }
+    },
+    {
+      "name": "feature_spec_add_risk",
+      "kind": "write",
+      "description": "Add a typed risk to a spec (Technical|Business|Timeline + severity + probability + mitigation).",
+      "params": [
+        { "name": "specId", "type": "int", "required": true },
+        { "name": "label", "type": "string", "required": true },
+        { "name": "riskType", "type": "string", "required": false, "default": "Technical", "description": "Technical | Business | Timeline" },
+        { "name": "severity", "type": "string", "required": false, "default": "medium", "description": "low | medium | high | critical | mitigated" },
+        { "name": "probability", "type": "string", "required": false, "default": "medium", "description": "low | medium | high" },
+        { "name": "mitigation", "type": "string", "required": false }
+      ],
+      "returns": { "success": "bool", "risk_id": "int" }
+    },
+    {
+      "name": "feature_spec_add_acceptance_test",
+      "kind": "write",
+      "description": "Add a technical acceptance test — your assistant verifies it at end of dev. Kind visual|nonvisual; verificationMd holds the URL/command/query to run (no source code).",
+      "params": [
+        { "name": "specId", "type": "int", "required": true },
+        { "name": "kind", "type": "string", "required": true, "description": "visual | nonvisual" },
+        { "name": "label", "type": "string", "required": true },
+        { "name": "verificationMd", "type": "string", "required": true, "description": "How to verify: a URL to open, a command to run, a query to check." }
+      ],
+      "returns": { "success": "bool", "acceptance_test_id": "int" }
+    },
+    {
+      "name": "feature_spec_update_acceptance_test",
+      "kind": "write",
+      "description": "Edit an existing tech acceptance test (kind, label, verification). Pass null to leave a field unchanged; empty string clears verification.",
+      "params": [
+        { "name": "acceptanceTestId", "type": "int", "required": true },
+        { "name": "kind", "type": "string", "required": false },
+        { "name": "label", "type": "string", "required": false },
+        { "name": "verificationMd", "type": "string", "required": false }
+      ],
+      "returns": { "success": "bool" }
+    },
+
+    {
+      "name": "workflow_default_get_all",
+      "kind": "read",
+      "description": "Return every workflow preference stored for the current user, as {skill, option, value}. Skills read this once at the start of a run; empty means use the skill's built-in default.",
+      "params": [],
+      "returns": { "success": "bool", "user_id": "int", "defaults": "[{ skill, option, value }]" }
+    },
+    {
+      "name": "workflow_default_set",
+      "kind": "write",
+      "description": "Persist (upsert) one workflow preference for the current user. value is the canonical machine string the skill expects (e.g. 'on', 'off', 'ask').",
+      "params": [
+        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash, e.g. 'feature-implement'." },
+        { "name": "option", "type": "string", "required": true, "description": "Option key, e.g. 'merge_mode'." },
+        { "name": "value", "type": "string", "required": true, "description": "Canonical value, e.g. 'confident', 'off', 'ask'." }
+      ],
+      "returns": { "success": "bool", "user_id": "int", "skill": "string", "option": "string", "value": "string" }
+    },
+    {
+      "name": "workflow_default_unset",
+      "kind": "write",
+      "description": "Remove one workflow preference so the skill falls back to its built-in default.",
+      "params": [
+        { "name": "skill", "type": "string", "required": true },
+        { "name": "option", "type": "string", "required": true }
+      ],
+      "returns": { "success": "bool", "user_id": "int", "skill": "string", "option": "string" }
+    },
+
+    {
+      "name": "followup_check_add",
+      "kind": "write",
+      "description": "Add a post-delivery follow-up check to a spec (check_type=technical) OR a brief (check_type=business) — exactly one parent. followupPromptMd holds the executable instructions + explicit pass/fail thresholds, written upfront and human-reviewed.",
+      "params": [
+        { "name": "checkType", "type": "string", "required": true, "description": "technical | business" },
+        { "name": "title", "type": "string", "required": true },
+        { "name": "followupPromptMd", "type": "string", "required": true, "description": "Instructions + pass/fail thresholds (markdown)." },
+        { "name": "scheduleOffsetDays", "type": "int", "required": true, "description": "First run at delivered_at + N days." },
+        { "name": "featureSpecId", "type": "int", "required": false, "description": "Technical check — pass this OR featureBriefId, never both." },
+        { "name": "featureBriefId", "type": "int", "required": false, "description": "Business check — pass this OR featureSpecId, never both." },
+        { "name": "chainOffsetDays", "type": "int", "required": false, "description": "Next horizon materialized on pass (null = no chain)." },
+        { "name": "onFailAction", "type": "string", "required": false, "description": "bug_fix | implement_spec | create_spec" }
+      ],
+      "returns": { "success": "bool", "followup_check_id": "int" }
+    },
+    {
+      "name": "followup_check_list",
+      "kind": "read",
+      "description": "List active follow-up checks for a spec or a brief (ordered by display order).",
+      "params": [
+        { "name": "featureSpecId", "type": "int", "required": false },
+        { "name": "featureBriefId", "type": "int", "required": false }
+      ],
+      "returns": { "success": "bool", "checks": "object[]" }
+    },
+    {
+      "name": "followup_check_update",
+      "kind": "write",
+      "description": "Edit an existing follow-up check. Pass null to leave a field unchanged; empty string clears the prompt. Set isActive=false to deactivate.",
+      "params": [
+        { "name": "checkId", "type": "int", "required": true },
+        { "name": "title", "type": "string", "required": false },
+        { "name": "followupPromptMd", "type": "string", "required": false },
+        { "name": "scheduleOffsetDays", "type": "int", "required": false },
+        { "name": "chainOffsetDays", "type": "int", "required": false },
+        { "name": "onFailAction", "type": "string", "required": false },
+        { "name": "isActive", "type": "bool", "required": false }
+      ],
+      "returns": { "success": "bool" }
+    },
+
+    {
+      "name": "retro_suggestion_add",
+      "kind": "write",
+      "description": "Post an end-of-run retrospective suggestion (status pending) — a durable learning about how the assistant should work. Targets the plugin's own skills or your CLAUDE.md, never your product code. The summary is the lesson + the rule to encode.",
+      "params": [
+        { "name": "source", "type": "string", "required": true, "description": "Originating skill, e.g. feature_implement | ship | feature_followup" },
+        { "name": "target_kind", "type": "string", "required": true, "description": "instruction | skill | command | doc" },
+        { "name": "target_file", "type": "string", "required": true, "description": "Path of the file the rule should live in (a pointer, not its content)." },
+        { "name": "title", "type": "string", "required": true },
+        { "name": "summary", "type": "string", "required": true, "description": "The lesson + the rule to encode." }
+      ],
+      "returns": { "success": "bool", "id": "int", "status": "string" }
+    }
+  ]
+}
