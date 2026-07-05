@@ -1,0 +1,13 @@
+{
+  "name": "galy-setup",
+  "version": "1.0.0",
+  "description": "One-command onboarding for the Galy Claude Kit — installs the plugin, writes your local config, and connects your assistant. Galy never sees your code.",
+  "type": "module",
+  "bin": {
+    "galy-setup": "./setup.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "SEE LICENSE IN ../LICENSE"
+}
