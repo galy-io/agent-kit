@@ -1,0 +1,5 @@
+{
+  "name": "galy",
+  "description": "Galy project-management kit: read the strategy, briefs and specs you manage in Galy, then plan, implement and ship inside your own repository. Galy never sees your code.",
+  "author": { "name": "Galy" }
+}

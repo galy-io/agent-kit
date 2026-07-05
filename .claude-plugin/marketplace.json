@@ -1,0 +1,11 @@
+{
+  "name": "galy",
+  "owner": { "name": "Galy" },
+  "plugins": [
+    {
+      "name": "galy",
+      "source": "./galy",
+      "description": "Galy project-management kit: strategy → briefs → specs → code, driven by your own Claude Code."
+    }
+  ]
+}

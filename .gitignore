@@ -1,0 +1,13 @@
+# Local credentials — never committed
+.galy/config.json
+
+# Ephemeral content buffers pulled/pushed by the galy CLI
+.tmp/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db

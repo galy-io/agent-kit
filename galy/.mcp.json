@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "galy": {
+      "type": "http",
+      "url": "https://gooal-prod.azurewebsites.net/mcp"
+    }
+  }
+}
