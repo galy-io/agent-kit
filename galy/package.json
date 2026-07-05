@@ -1,0 +1,16 @@
+{
+  "name": "@galy/claude-kit",
+  "description": "Galy project-management kit for Claude Code — strategy, briefs and specs driven by your own assistant. Galy never sees your code.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "galy": "./bin/galy.mjs"
+  },
+  "scripts": {
+    "conformance": "node contract/conformance/runner.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "SEE LICENSE IN ../LICENSE"
+}

@@ -1,0 +1,68 @@
+---
+name: analyse
+description: Meta-reflection on the assistant's own behavior — force an honest analysis of WHY a choice was made, and produce concrete rule edits to the plugin's own skills or your CLAUDE.md. It does NOT fix the original task; it stops the loop and answers the meta question.
+---
+
+# analyse — meta-reflection on my behavior
+
+**Hard rule: this is NOT an action skill.** You do not fix code, navigate, test, deploy, commit, or
+resume the original task. You stop the execution loop and answer the meta question.
+
+The user invokes this when they want to understand **why** you did (or didn't do) something — to improve
+the plugin's skills or their `CLAUDE.md` for future sessions. Jumping into "ah, I should have…" and
+continuing to work is the exact anti-pattern this skill blocks.
+
+## Input
+
+The question follows the command, e.g. "why did you stop?", "why did you say it was done without
+testing?", "why did you pick option A over B?". If none is given, ask what behavior to analyse — do not
+guess.
+
+## What to produce
+
+A single reply, four short sections. No tool calls beyond reading files to ground the answer. No action
+plan for the original task, no offer to continue, no apology.
+
+### 1. What actually happened
+
+1-2 sentences. Literal trace: which step, which act, which result. No rephrasing.
+
+### 2. What drove that behavior
+
+Be honest and specific. Pick the drivers that actually applied (don't list the menu):
+
+- A `CLAUDE.md` or skill rule I followed literally (cite it verbatim, short quote).
+- Two rules in collision — cite both; the fix is a precedence line, not a new rule.
+- A heuristic from training that isn't in any project rule ("politeness → stop and summarise",
+  "safety → ask before acting", "long response → wrap up").
+- Ambiguity in the user's prior message.
+- Tool state — a timeout, a failure, a permission prompt that steered me off-track.
+
+For each: one line of description + one line on why it fired *at that moment*.
+
+### 3. Was it the right call?
+
+One sentence: Yes / No / Partially + the concrete act I should have done ("run the app and click the
+button before declaring the fix done").
+
+### 4. Proposed rule edits
+
+The deliverable. Concrete diffs the user can approve or reject. Targets, in order of preference:
+1. **A plugin skill** (`${CLAUDE_PLUGIN_ROOT}/skills/**`) — if the behavior is skill-specific.
+2. **A plugin instruction** (`${CLAUDE_PLUGIN_ROOT}/instructions/*.md`) — a cross-skill convention.
+3. **The client's `CLAUDE.md`** — last resort, cross-cutting rules only.
+
+Discipline: draft internally long → 1 line → shortest form; output the shortest that keeps the source
+behavior. Minimum diff — prefer swapping 3 words over adding a paragraph. Announce the word-count delta.
+Do not commit — present the edits and wait for the user's explicit go on each.
+
+If no edit is warranted, say so ("a judgment call the current rules already cover; a single miss, not a
+pattern") — don't invent a rule to look productive. But an actual error against an existing rule always
+needs a fix, never "none".
+
+## Anti-patterns
+
+- "Ah, I should have…" then resuming work — resumption belongs to the user's next turn.
+- Vague drivers ("by default I prefer to confirm") — cite the rule or admit the heuristic.
+- Abstract principles ("I should test more") instead of one concrete diff.
+- Proposing "ask the user" as the fix — the assistant works autonomously.
