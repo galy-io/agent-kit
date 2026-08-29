@@ -1,16 +1,25 @@
 #!/usr/bin/env node
 // galy-setup — one-command onboarding for the Galy Claude Kit.
 //
-//   npx galy-setup <token> [--endpoint <url>]
+//   npx galy-setup <token> --endpoint https://<your-workspace>.galy.cloud
 //
 // Does four things, in order, each best-effort with a clear message on failure:
 //   a) installs the plugin via the Claude CLI (marketplace add + install), or prints
 //      manual steps if `claude` isn't on PATH;
-//   b) writes .galy/config.json { endpoint, token } in the current repo and makes sure
-//      it is gitignored — the token never lands in a committable file;
-//   c) prints the shell export the plugin's .mcp.json needs (Authorization: Bearer
-//      ${GALY_TOKEN}) so headless runs pick the token up too;
+//   b) registers the Galy MCP endpoint for THIS project, with the address and the token
+//      written literally into the local scope — so the connection does not depend on an
+//      environment variable that only one launcher knows how to set;
+//   c) writes .galy/config.json { endpoint, token } for the `galy` CLI, and makes sure it
+//      is gitignored — the token never lands in a committable file;
 //   d) smoke-tests the endpoint (GET /api/pm/search?q=ping) with the token.
+//
+// Why the local scope and not an env var. The kit used to ship a .mcp.json holding one
+// hardcoded address and `Bearer ${GALY_TOKEN}`. Galy is multi-tenant: every workspace
+// answers on its own host, so a single baked-in address authenticates nobody, and the
+// env var left the token to be persisted by hand — on Windows that meant `setx`, which
+// writes it in clear into the user's registry. `claude mcp add --scope local` stores both
+// values outside the repository, keyed to this project, with nothing to export and
+// nothing to commit.
 //
 // Zero dependencies. Node 18+ (global fetch, spawnSync).
 
@@ -18,9 +27,9 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 
-const DEFAULT_ENDPOINT = "https://gooal-prod.azurewebsites.net";
 const MARKETPLACE = "galy-io/claude-kit";
 const GITIGNORE_LINE = ".galy/config.json";
+const CLAUDE = process.platform === "win32" ? "claude.cmd" : "claude";
 
 function parseArgs(argv) {
   const out = { _: [] };
@@ -40,29 +49,32 @@ function warn(msg) { console.log(`  ! ${msg}`); }
 
 const HELP = `galy-setup — connect your Claude Code to your Galy workspace
 
-  npx galy-setup <token> [--endpoint <url>]
+  npx galy-setup <token> --endpoint https://<your-workspace>.galy.cloud
 
-  <token>       your Galy API token (galy.io → Settings → Connect your assistant)
-  --endpoint    Galy host (default ${DEFAULT_ENDPOINT})
+  <token>       your Galy API token
+  --endpoint    the address of your workspace
+
+Both are on one page in Galy: Settings → Connect your assistant. It prints this exact
+command, address already filled in — copy it from there rather than typing it.
 
 Galy never sees your code. This connects your assistant to your Galy workspace —
 it does not give Galy access to your repository.`;
 
+function claudeAvailable() {
+  return !spawnSync(CLAUDE, ["--version"], { encoding: "utf8" }).error;
+}
+
 // (a) Install the plugin through the Claude CLI, if present.
-function installPlugin() {
+function installPlugin(haveClaude) {
   step("Installing the Galy plugin via the Claude CLI");
-  const claude = spawnSync(process.platform === "win32" ? "claude.cmd" : "claude", ["--version"], { encoding: "utf8" });
-  if (claude.error) {
+  if (!haveClaude) {
     warn("`claude` not found on PATH — skipping the automatic install.");
     console.log("    Install it yourself later with:");
     console.log(`      claude plugin marketplace add ${MARKETPLACE}`);
     console.log("      claude plugin install galy");
     return;
   }
-  const run = (args) => {
-    const r = spawnSync(process.platform === "win32" ? "claude.cmd" : "claude", args, { stdio: "inherit" });
-    return r.status === 0;
-  };
+  const run = (args) => spawnSync(CLAUDE, args, { stdio: "inherit" }).status === 0;
   if (run(["plugin", "marketplace", "add", MARKETPLACE]) && run(["plugin", "install", "galy"])) {
     ok("plugin installed.");
   } else {
@@ -72,9 +84,53 @@ function installPlugin() {
   }
 }
 
-// (b) Write .galy/config.json and make sure it is gitignored.
+// (b) Register the MCP endpoint for this project, with literal values.
+function registerMcp(haveClaude, endpoint, token) {
+  step("Registering the Galy MCP endpoint for this project");
+  const url = `${endpoint}/mcp`;
+
+  if (!haveClaude) {
+    warn("`claude` not found on PATH — register it yourself once it is installed:");
+    console.log(`      claude mcp add --scope local galy --transport http ${url} \\`);
+    console.log(`        --header "Authorization: Bearer <your-token>"`);
+    return;
+  }
+
+  // Re-running setup with a fresh token must replace the old entry, not collide with it.
+  spawnSync(CLAUDE, ["mcp", "remove", "galy", "-s", "local"], { encoding: "utf8" });
+
+  const added = spawnSync(CLAUDE, [
+    "mcp", "add", "--scope", "local", "galy",
+    "--transport", "http", url,
+    "--header", `Authorization: Bearer ${token}`,
+  ], { encoding: "utf8" });
+
+  if (added.status !== 0) {
+    warn(`the Claude CLI refused the registration: ${(added.stderr || added.stdout || "").trim().slice(0, 200)}`);
+    console.log("    Register it by hand:");
+    console.log(`      claude mcp add --scope local galy --transport http ${url} \\`);
+    console.log(`        --header "Authorization: Bearer <your-token>"`);
+    return;
+  }
+  ok(`galy → ${url} (local scope: this project only, nothing committed).`);
+
+  // A second definition of the same name is the failure that looks like nothing: the local
+  // one wins, and whichever the user thought they were editing sits there being ignored.
+  const projectConfig = join(process.cwd(), ".mcp.json");
+  if (existsSync(projectConfig)) {
+    try {
+      const parsed = JSON.parse(readFileSync(projectConfig, "utf8"));
+      if (parsed?.mcpServers?.galy) {
+        warn(".mcp.json also declares a server named `galy`. The local one now wins.");
+        console.log("    Keep one of the two:  claude mcp remove galy -s project");
+      }
+    } catch { /* an unreadable .mcp.json is not this command's problem */ }
+  }
+}
+
+// (c) Write .galy/config.json for the CLI, and make sure it is gitignored.
 function writeConfig(endpoint, token) {
-  step("Writing local config");
+  step("Writing local config for the `galy` CLI");
   const dir = join(process.cwd(), ".galy");
   mkdirSync(dir, { recursive: true });
   const path = join(dir, "config.json");
@@ -99,20 +155,6 @@ function writeConfig(endpoint, token) {
   }
 }
 
-// (c) Tell the user how to persist the token for the MCP header ${GALY_TOKEN}.
-function printExport(token) {
-  step("Persisting the token for the MCP endpoint");
-  console.log("  The plugin's .mcp.json sends `Authorization: Bearer ${GALY_TOKEN}`.");
-  console.log("  Add this to your shell profile so every session picks it up:");
-  if (process.platform === "win32") {
-    console.log(`      setx GALY_TOKEN ${token}                # PowerShell / cmd, new shells`);
-    console.log(`      $env:GALY_TOKEN = "${token}"            # current PowerShell session`);
-  } else {
-    console.log(`      echo 'export GALY_TOKEN=${token}' >> ~/.profile && export GALY_TOKEN=${token}`);
-  }
-  ok("the CLI also reads the token from .galy/config.json, so it works without the export.");
-}
-
 // (d) Smoke-test the endpoint with the token.
 async function smoke(endpoint, token) {
   step("Testing the connection");
@@ -121,7 +163,7 @@ async function smoke(endpoint, token) {
       headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
     });
     if (res.status === 401 || res.status === 403) {
-      fail("the endpoint rejected the token (401/403). Copy a fresh token from galy.io → Settings → Connect your assistant.");
+      fail(`${endpoint} rejected the token (${res.status}).\n  Either the token is revoked, or it belongs to a different workspace than --endpoint.\n  Both the address and a fresh token are on: ${endpoint}/account/assistant`);
     }
     if (!res.ok) fail(`the endpoint returned HTTP ${res.status}. Check the --endpoint url.`);
     await res.text();
@@ -137,16 +179,22 @@ async function main() {
 
   const token = args._[0];
   if (!token) fail("missing token.\n" + HELP);
-  const endpoint = (args.endpoint || DEFAULT_ENDPOINT).replace(/\/+$/, "").replace(/\/mcp$/i, "");
+  // No default address on purpose: Galy is multi-tenant, and a guessed host fails as a 401
+  // that reads like a bad token — sending the user after the wrong problem.
+  if (!args.endpoint) fail("missing --endpoint.\n" + HELP);
+  const endpoint = args.endpoint.replace(/\/+$/, "").replace(/\/mcp$/i, "");
+  if (!/^https?:\/\//i.test(endpoint)) fail(`--endpoint must be a full url, got "${args.endpoint}".`);
   if (!/^[0-9a-f]{64}$/i.test(token)) warn("token doesn't look like a 64-hex string — continuing anyway.");
 
   console.log("Galy Claude Kit — setup");
-  installPlugin();
+  const haveClaude = claudeAvailable();
+  installPlugin(haveClaude);
+  registerMcp(haveClaude, endpoint, token);
   writeConfig(endpoint, token);
-  printExport(token);
   await smoke(endpoint, token);
 
-  console.log("\n✅ Assistant connecté — Galy never sees your code.\n");
+  console.log("\n✅ Assistant connecté — Galy never sees your code.");
+  console.log("   Open Claude Code here: it will tell you where your practices stand.\n");
 }
 
 main().catch((e) => fail(e.message));

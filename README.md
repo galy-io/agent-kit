@@ -25,11 +25,18 @@ You are connecting *your assistant* to *your Galy workspace* — not giving Galy
 ### Option A — one command (recommended)
 
 ```
-npx galy-setup <your-galy-token>
+npx galy-setup <your-galy-token> --endpoint https://<your-workspace>.galy.cloud
 ```
 
-Get your token from **galy.io → Settings → Connect your assistant**. `galy-setup` installs the plugin,
-writes your local `.galy/config.json`, and registers the MCP endpoint with the Bearer token.
+Both values are on one page in Galy — **Settings → Connect your assistant** — which prints that exact
+command with your address already filled in, and a copy button. Only the workspace owner sees it.
+
+`galy-setup` installs the plugin, registers the MCP endpoint **for that project only** (address and
+token stored literally in Claude Code's local scope, outside your repository), writes
+`.galy/config.json` for the CLI, gitignores it, and tests the connection before saying it worked.
+
+There is no default address, on purpose: Galy is multi-tenant, and every workspace answers on its own
+host. A guessed host does not fail loudly — it fails as a `401` that reads like a bad token.
 
 ### Option B — via the plugin marketplace
 
@@ -38,20 +45,31 @@ claude plugin marketplace add galy-io/claude-kit
 claude plugin install galy
 ```
 
-Then add your token to `.galy/config.json` at your repo root:
+The plugin declares no MCP server of its own, so it has nothing to connect to yet. Open Claude Code in
+your repository and it will say so and point you at the `connect` skill — or run the `galy-setup`
+command above, which does the same thing in one line.
 
-```json
-{ "endpoint": "https://gooal-prod.azurewebsites.net", "token": "<your-galy-token>" }
-```
+Your token never goes into a tracked file, a shell profile, or the Windows registry.
 
-`.galy/config.json` is gitignored — never commit your token.
+## It starts on its own
+
+Opening Claude Code in a connected repository **triggers the conversation about your practices** — you
+do not have to know what to type. A `SessionStart` hook hands the session one instruction: read the
+practice baseline through `maturity_challenge` before answering, and open with a single line — where
+you stand, and the one next step. If something is at risk, that comes first.
+
+The hook is offline. It calls nothing, reads no token, and stays silent in repositories that have
+nothing to do with Galy. A repository that has never been observed is offered the first pass once; a
+repository already connected is challenged at most once every twelve hours.
 
 ## What you get
 
-Ten skills that take a need from idea to shipped, each driven by the Galy objects you manage:
+Twelve skills that take a need from idea to shipped, each driven by the Galy objects you manage:
 
 | Skill | What it does |
 |---|---|
+| `onboarding` | The first pass: tour the repository, observe where practices stand against the twenty criteria, draft the missing doctrine, record what was seen. |
+| `connect` | Wire a repository to your workspace, or diagnose a connection that answers nothing. |
 | `strategy` | Explore your objectives tree (read-only) and map work to the objective it serves. |
 | `feature-brief` | Frame a business need into a brief — problem, vision, user stories, success criteria. |
 | `feature-spec` | Turn a brief into a technical spec — explore your codebase, design, phases, risks, acceptance tests. |
@@ -88,13 +106,14 @@ carries work items and their text — never your source.
 .claude-plugin/marketplace.json   # marketplace entry
 galy/
   .claude-plugin/plugin.json      # plugin manifest
-  .mcp.json                       # Galy MCP endpoint (Bearer auth set by galy-setup)
-  skills/<name>/SKILL.md          # the 10 skills
+  hooks/hooks.json                # SessionStart — what makes it start on its own
+  hooks/session-start.mjs         # offline: decides whether Galy has anything to say here
+  skills/<name>/SKILL.md          # the 12 skills
   instructions/                   # shared conventions the skills reference
   contract/pm-v1.json             # the project-management tool + REST contract
   contract/conformance/           # the outward-only conformance suite (MCP + REST)
   bin/galy.mjs                    # the galy CLI
-setup/galy-setup                  # npx galy-setup <token> — one-command onboarding
+setup/galy-setup                  # npx galy-setup <token> --endpoint <url>
 ```
 
 ## License
