@@ -29,7 +29,38 @@ import { join } from "node:path";
 
 const MARKETPLACE = "galy-io/claude-kit";
 const GITIGNORE_LINE = ".galy/config.json";
-const CLAUDE = process.platform === "win32" ? "claude.cmd" : "claude";
+
+// How the Claude CLI is spelled depends on how it was installed, and guessing wrong is not a
+// loud failure: the two steps that matter — installing the plugin and registering the MCP
+// endpoint — were silently skipped, and the client was left with a config file and nothing
+// connected. The native installer ships `claude.exe`; an npm install ships `claude.cmd`, which
+// recent Node refuses to spawn without a shell (EINVAL). So we try, in order, and remember what
+// answered.
+const CANDIDATES = process.platform === "win32"
+  ? [{ cmd: "claude.exe" }, { cmd: "claude" }, { cmd: "claude.cmd", shell: true }]
+  : [{ cmd: "claude" }];
+
+let resolved;
+
+/** The first spelling that answers `--version`, or null when the CLI is genuinely absent. */
+function claudeCli() {
+  if (resolved !== undefined) return resolved;
+  for (const candidate of CANDIDATES) {
+    const probe = spawnSync(candidate.cmd, ["--version"], { encoding: "utf8", shell: candidate.shell });
+    if (!probe.error && probe.status === 0) {
+      resolved = candidate;
+      return resolved;
+    }
+  }
+  resolved = null;
+  return resolved;
+}
+
+function runClaude(args, options = {}) {
+  const cli = claudeCli();
+  if (cli === null) return { status: 1, error: new Error("claude not found") };
+  return spawnSync(cli.cmd, args, { shell: cli.shell, ...options });
+}
 
 function parseArgs(argv) {
   const out = { _: [] };
@@ -60,10 +91,6 @@ command, address already filled in — copy it from there rather than typing it.
 Galy never sees your code. This connects your assistant to your Galy workspace —
 it does not give Galy access to your repository.`;
 
-function claudeAvailable() {
-  return !spawnSync(CLAUDE, ["--version"], { encoding: "utf8" }).error;
-}
-
 // (a) Install the plugin through the Claude CLI, if present.
 function installPlugin(haveClaude) {
   step("Installing the Galy plugin via the Claude CLI");
@@ -74,7 +101,7 @@ function installPlugin(haveClaude) {
     console.log("      claude plugin install galy");
     return;
   }
-  const run = (args) => spawnSync(CLAUDE, args, { stdio: "inherit" }).status === 0;
+  const run = (args) => runClaude(args, { stdio: "inherit" }).status === 0;
   if (run(["plugin", "marketplace", "add", MARKETPLACE]) && run(["plugin", "install", "galy"])) {
     ok("plugin installed.");
   } else {
@@ -97,9 +124,9 @@ function registerMcp(haveClaude, endpoint, token) {
   }
 
   // Re-running setup with a fresh token must replace the old entry, not collide with it.
-  spawnSync(CLAUDE, ["mcp", "remove", "galy", "-s", "local"], { encoding: "utf8" });
+  runClaude(["mcp", "remove", "galy", "-s", "local"], { encoding: "utf8" });
 
-  const added = spawnSync(CLAUDE, [
+  const added = runClaude([
     "mcp", "add", "--scope", "local", "galy",
     "--transport", "http", url,
     "--header", `Authorization: Bearer ${token}`,
@@ -187,7 +214,7 @@ async function main() {
   if (!/^[0-9a-f]{64}$/i.test(token)) warn("token doesn't look like a 64-hex string — continuing anyway.");
 
   console.log("Galy Claude Kit — setup");
-  const haveClaude = claudeAvailable();
+  const haveClaude = claudeCli() !== null;
   installPlugin(haveClaude);
   registerMcp(haveClaude, endpoint, token);
   writeConfig(endpoint, token);
