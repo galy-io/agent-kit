@@ -47,6 +47,27 @@ function repoRoot(from) {
   }
 }
 
+/**
+ * The main checkout behind a linked worktree, or null when `root` is one already.
+ *
+ * A worktree's `.git` is a FILE holding `gitdir: <main>/.git/worktrees/<name>`, so the main
+ * checkout is readable without spawning git. It matters because Claude Code keys per-project
+ * settings — the MCP registration among them — on the main checkout: a team working in five
+ * worktrees registers the server once, and all five must recognise it.
+ */
+function mainWorktree(root) {
+  if (!root) return null;
+  const dotGit = join(root, ".git");
+  try {
+    if (!statSync(dotGit).isFile()) return null;
+    const match = /^gitdir:\s*(.+)$/m.exec(readFileSync(dotGit, "utf8"));
+    if (!match) return null;
+    const gitDir = match[1].trim().split("\\").join("/");
+    const cut = gitDir.toLowerCase().indexOf("/.git/worktrees/");
+    return cut === -1 ? null : gitDir.slice(0, cut);
+  } catch { return null; }
+}
+
 /** Same upward walk the galy CLI does, so both agree on which workspace a repo belongs to. */
 function findGalyConfig(from) {
   let dir = resolve(from);
@@ -57,6 +78,32 @@ function findGalyConfig(from) {
     if (parent === dir) return null;
     dir = parent;
   }
+}
+
+/**
+ * The authoritative signal: a `galy` server registered for this project in Claude Code's own
+ * config. `galy-setup` and the `connect` skill both write there, so a repository wired the
+ * documented way is recognised even with nothing Galy-shaped in its tree.
+ */
+function registeredForProject(dirs) {
+  const path = join(homedir(), ".claude.json");
+  if (!existsSync(path)) return false;
+  try {
+    // Small by construction — a few tens of kilobytes of per-project settings.
+    if (statSync(path).size > 8 * 1024 * 1024) return false;
+    const projects = JSON.parse(readFileSync(path, "utf8"))?.projects;
+    if (!projects) return false;
+    const wanted = new Set(dirs.filter(Boolean).map(normalisePath));
+    for (const [key, value] of Object.entries(projects)) {
+      if (value?.mcpServers?.galy && wanted.has(normalisePath(key))) return true;
+    }
+    return false;
+  } catch { return false; }
+}
+
+// Windows hands the same directory back as C:\x, C:/x or c:\x depending on who is asking.
+function normalisePath(p) {
+  return resolve(p).split("\\").join("/").replace(/[/]+$/, "").toLowerCase();
 }
 
 function declaresGalyServer(root) {
@@ -112,7 +159,7 @@ Before you answer the user's first request:
 3. If \`observed\` is 0, do not report a score. Say plainly that these practices have never been looked at, and offer the first pass: the \`galy:onboarding\` skill. Say what it costs before they accept — it reads, it records what it saw, it changes nothing on its own.
 4. Then do what the user actually asked. One line, not a report: they came to work, and an assistant that opens with a dashboard gets muted.
 
-Never invent a state. Everything you say about their practices comes from that call, or you say you did not look. If it answers 401 or unauthorized, say so in one line, point at \`galy:connect\`, and carry on with their request — do not retry.`;
+Never invent a state. Everything you say about their practices comes from that call, or you say you did not look. If the tool is not available at all, or answers 401 or unauthorized, say so in one line, point at \`galy:connect\`, and carry on with their request — do not retry.`;
 
 const OFFER = `The Galy kit is installed, but this repository is not connected to a Galy workspace — so there is no practice baseline to read here, and none of the \`mcp__galy__*\` tools will answer.
 
@@ -127,7 +174,10 @@ const root = repoRoot(cwd);
 // Outside a repository there is no work to challenge, and no stable identity to stamp.
 if (!root) quit();
 
-const wired = Boolean(findGalyConfig(cwd)) || declaresGalyServer(root) || Boolean(process.env.GALY_TOKEN);
+const wired = registeredForProject([root, cwd, mainWorktree(root)])
+  || Boolean(findGalyConfig(cwd))
+  || declaresGalyServer(root)
+  || Boolean(process.env.GALY_TOKEN);
 const stamp = stampPath(root);
 const kind = wired ? "challenged" : "offered";
 const cooldown = wired ? CHALLENGE_COOLDOWN_MS : OFFER_COOLDOWN_MS;
