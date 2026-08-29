@@ -25,7 +25,7 @@ You are connecting *your assistant* to *your Galy workspace* — not giving Galy
 ### Option A — one command (recommended)
 
 ```
-npx galy-setup <your-galy-token> --endpoint https://<your-workspace>.galy.cloud
+npx -y github:galy-io/claude-kit <your-galy-token> --endpoint https://<your-workspace>.galy.cloud
 ```
 
 Both values are on one page in Galy — **Settings → Connect your assistant** — which prints that exact
@@ -113,7 +113,8 @@ galy/
   contract/pm-v1.json             # the project-management tool + REST contract
   contract/conformance/           # the outward-only conformance suite (MCP + REST)
   bin/galy.mjs                    # the galy CLI
-setup/galy-setup                  # npx galy-setup <token> --endpoint <url>
+package.json                      # makes the repo itself runnable: npx -y github:galy-io/claude-kit
+setup/setup.mjs                   # the one-command setup
 ```
 
 ## License

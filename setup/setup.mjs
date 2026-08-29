@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // galy-setup — one-command onboarding for the Galy Claude Kit.
 //
-//   npx galy-setup <token> --endpoint https://<your-workspace>.galy.cloud
+//   npx -y github:galy-io/claude-kit <token> --endpoint https://<your-workspace>.galy.cloud
 //
 // Does four things, in order, each best-effort with a clear message on failure:
 //   a) installs the plugin via the Claude CLI (marketplace add + install), or prints
@@ -49,7 +49,7 @@ function warn(msg) { console.log(`  ! ${msg}`); }
 
 const HELP = `galy-setup — connect your Claude Code to your Galy workspace
 
-  npx galy-setup <token> --endpoint https://<your-workspace>.galy.cloud
+  npx -y github:galy-io/claude-kit <token> --endpoint https://<your-workspace>.galy.cloud
 
   <token>       your Galy API token
   --endpoint    the address of your workspace
