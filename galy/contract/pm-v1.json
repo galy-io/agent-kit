@@ -49,6 +49,15 @@
       "returns": { "success": "bool", "period_id": "int?", "objective_id": "int?", "depth": "int", "total": "int", "items": "[{ id, title, icon, objective_type, parent_objective_id, is_linked, computed_progress, child_count, has_children, key_result_count, key_results? }]" }
     },
     {
+      "name": "strategy_search_objectives",
+      "kind": "read",
+      "description": "Search objectives by title. Use it when the user names an objective but you have no id; prefer strategy_navigate_children once you have an anchor.",
+      "params": [
+        { "name": "q", "type": "string", "required": true, "description": "Search term matched against objective titles." }
+      ],
+      "returns": { "success": "bool", "objectives": "[objective]" }
+    },
+    {
       "name": "strategy_get_objective_breadcrumb",
       "kind": "read",
       "description": "Return the parent chain of an objective from root to leaf, one node per level. Use it to build the objective header of a spec without loading the whole strategy.",
@@ -355,6 +364,45 @@
         { "name": "summary", "type": "string", "required": true, "description": "The lesson + the rule to encode." }
       ],
       "returns": { "success": "bool", "id": "int", "status": "string" }
+    },
+    {
+      "name": "maturity_challenge",
+      "kind": "read",
+      "description": "Read where the team's agent-assisted engineering practices stand: level reached, the single next step, what is at risk, and the criteria nobody has ever looked at. The kit's SessionStart hook asks for it before anything else — it is what makes opening a session start the conversation.",
+      "params": [],
+      "returns": { "success": "bool", "level_reached": "int", "level_name": "string", "observed": "int", "total": "int", "unverifiable": "int", "to_recheck": "int", "next_step": "{ criterion, name, power, guard, unlocks } | null", "at_risk": "[{ criterion, name, missing_guard }]", "never_probed": "string[]", "open_questions": "[{ id, criterionId, questionMd, unlocksCount }]" }
+    },
+    {
+      "name": "maturity_start_run",
+      "kind": "write",
+      "description": "Open a maturity pass. Every observation belongs to one.",
+      "params": [
+        { "name": "kind", "type": "string", "required": false, "description": "onboarding (the first pass at a new client) | scheduled | manual. Default: manual." }
+      ],
+      "returns": { "success": "bool", "run_id": "int", "kind": "string", "started_at": "datetime" }
+    },
+    {
+      "name": "maturity_run_probes",
+      "kind": "write",
+      "description": "Run the probes the instance can run on its own — no agent judgement involved. Whatever it cannot see from there is written down as not verifiable, with the reason and who could observe it. Call it before maturity_challenge to work from measured ground rather than from memory.",
+      "params": [
+        { "name": "kind", "type": "string", "required": false, "description": "onboarding | scheduled | manual. Default: scheduled." }
+      ],
+      "returns": { "success": "bool", "runId": "int", "observed": "int", "partial": "int", "absent": "int", "unverifiable": "int", "total": "int" }
+    },
+    {
+      "name": "maturity_record",
+      "kind": "write",
+      "description": "Record what you OBSERVED for one criterion — never what you assume. Evidence is mandatory except for unverifiable, which needs a reason instead. Never put a secret in the evidence: count and locate, never quote. Read the state it answers with: an unguarded power is stored lower than the state asked for.",
+      "params": [
+        { "name": "criterion_id", "type": "string", "required": true, "description": "Criterion key, e.g. secrets_in_store." },
+        { "name": "state", "type": "string", "required": true, "description": "observed | partial | absent | unverifiable" },
+        { "name": "run_id", "type": "int", "required": true, "description": "Run id from maturity_start_run." },
+        { "name": "evidence_md", "type": "string", "required": false, "description": "What you saw, in plain words: counts, dates, paths. Never a secret value." },
+        { "name": "unverifiable_reason", "type": "string", "required": false, "description": "Why you could not check it. Required when state is unverifiable." },
+        { "name": "unguarded_power", "type": "bool", "required": false, "description": "True when the power exists but you did NOT observe its guard. Forces the state down: an unguarded power never shows green." }
+      ],
+      "returns": { "success": "bool", "criterionId": "string", "state": "string (the state actually STORED, which may be lower than the one requested)", "observed_at": "datetime", "expires_at": "datetime", "evidence_was_redacted": "bool" }
     }
   ]
 }
