@@ -42,8 +42,8 @@ buffer synced by the CLI, never passed as a tool argument.
    edit `.tmp/galy-content/feature-brief/<brief_id>.md` (fields `problem`, `vision`, `executive` —
    executive ≤ 375 words, readable without internal jargon), then `galy content push feature-brief <brief_id>`.
 5. **User stories** (P0 first): `mcp__galy__feature_brief_add_user_story(briefId, persona, action, benefit, priority)`.
-6. **Business success criteria:** `mcp__galy__feature_brief_add_acceptance_test` is not in the base
-   contract; instead capture measurable outcomes as **business follow-up checks** —
+6. **Business success criteria:** a brief carries no acceptance test of its own — that verb belongs
+   to specs. Capture measurable outcomes as **business follow-up checks** instead —
    `mcp__galy__followup_check_add(featureBriefId=<brief_id>, checkType="business", title, followupPromptMd=<outcome + pass/fail threshold>, scheduleOffsetDays=<J+N>, onFailAction="create_spec")`.
    See `${CLAUDE_PLUGIN_ROOT}/instructions/followup-conventions.md`.
 
