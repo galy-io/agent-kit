@@ -124,6 +124,36 @@ observe and report to you, **and you do the recording after the checkpoint** —
 from how the agents used to work, and the reason their instructions say to return their findings
 rather than write them.
 
+### When nobody answers, the pass CLOSES. It does not hang.
+
+The user walks away. It is the normal case, not the exception: they launched a pass that looks at
+twenty things, and they went to do something else.
+
+Watch what that used to produce. The pass stopped at the first checkpoint and never resumed —
+**and the page kept the grey the probes had written**, thirteen criteria saying « l'instance ne
+voit pas cela d'ici », which reads exactly like a finished result. Nothing failed, nothing said
+the pass had stopped, and the grid was worse than if nobody had ever run it: it *looked* answered.
+
+So the checkpoint is a pause, never a deadlock:
+
+- **Finish everything that does not need them.** Green records itself, so keep going through the
+  criteria and hold the non-green ones in a list. One unanswered question must never block the
+  nineteen observations that had nothing to ask.
+- **Ask once more at the very end**, with everything held, in a single question. Someone who came
+  back after lunch answers one question about the whole pass; they will not answer six.
+- **Then close on what is true**, and say the held findings out loud even though you did not write
+  them:
+
+  > Ces constats attendent ton accord et ne sont pas enregistrés : <la pratique> — <l'état>,
+  > <la pratique> — <l'état>. Dis-moi « enregistre » et je les écris.
+
+  They are yours to say and not yours to write. Saying them costs nothing and keeps the finding;
+  writing them is what needed the yes.
+
+**Never record a held finding because the pass is ending.** The end of a pass is not consent, and
+« il n'a pas répondu » is not a yes. A grid that filled itself in because someone went to lunch is
+the exact failure this checkpoint exists to prevent — you would just have taken longer to commit it.
+
 ## When you actually need permission
 
 Only when a criterion cannot be observed without it, and only then:
