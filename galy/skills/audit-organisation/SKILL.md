@@ -112,6 +112,43 @@ before the first observation is one the user did not ask for, and reads as stall
 disclaimer. The guarantees are still true and still enforced by everything above; they are simply
 not the agent's to advertise. A guarantee is worth what its behaviour is worth.
 
+## Where this work hangs: the objective
+
+**Before the criteria**, make sure the audit has a home in the strategy tree. A maturity pass that
+hangs under nothing is a report; hung under an objective, it is work someone answers for — and the
+twentieth criterion, `effect_measured`, is exactly the claim that intent goes down to execution and
+measurement comes back up.
+
+Look for an objective meaning **« Améliorer l'organisation grâce à l'I.A. »**, and under it a
+sub-objective meaning **« Ajuster l'organisation de la tech »** — in the user's language.
+
+`mcp__galy__strategy_search_objectives` finds it; `mcp__galy__strategy_navigate_children` shows what
+hangs under it.
+
+**Search on meaning, not on bytes.** A team that already wrote "Améliorer l'organisation avec l'IA"
+has that objective; creating a second one beside it is worse than not looking, because from then on
+two trees claim the same ground and neither is wrong. When something close exists, use it and say
+which one you picked.
+
+**If both exist** — work inside: the single next step you close on is expressed as work under that
+sub-objective, and anything you propose hangs there rather than floating.
+
+**If they are missing** — propose them, in one line, and create only on a yes:
+
+> Je ne vois pas d'objectif « Améliorer l'organisation grâce à l'I.A. » dans votre stratégie.
+> Je le crée, avec « Ajuster l'organisation de la tech » dessous, pour y rattacher ce que cet
+> audit va produire ?
+
+`mcp__galy__strategy_create_objective` takes a `parent_objective_id`, so the sub-objective is one
+call, not two.
+
+**Why this one asks when recording an observation does not.** An observation is the audit's own
+output, written to the audit's own panel. An objective is **their strategy** — the thing the whole
+product exists to hold. Something appearing there that nobody asked for is the same failure as a
+grid filled in behind their back, and it is the more visible of the two.
+
+A refusal costs nothing: record the criteria anyway and close without hanging them. Never insist.
+
 ## Each conclusion
 
 Two or three lines, and they answer what a human actually wants to know:
