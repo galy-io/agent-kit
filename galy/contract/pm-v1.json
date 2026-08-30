@@ -2,6 +2,18 @@
   "contract": "galy-pm-v1",
   "description": "The project-management verbs the Galy MCP server exposes to your Claude Code. Strictly outward: your assistant reads strategy, briefs and specs and writes back statuses, plans and follow-ups. No verb accepts source code, a diff, or file content — Galy never sees your repository. And no verb sends anything out of your tenant: everything written here stays in your own instance. Support is blind by construction — nothing in this contract can change that, and no skill asks a user to.",
   "transport": { "type": "http", "url": "https://<your-workspace>.galy.cloud/mcp (every workspace answers on its own host; registered per project by galy-setup, never hardcoded)", "auth": "Bearer token in the Authorization header (posted by galy-setup); token is looked up by its SHA-256, so it never travels or is stored in clear on the server" },
+  "workflow_options": {
+    "description": "The complete vocabulary of workflow preferences this kit knows: which skill owns which option, and the canonical values each accepts. This is the single authority - the enums on workflow_default_set, workflow_default_unset and workflow_policy_resolve are checked against it, and so is every option a skill cites. An option that is not here does not exist.",
+    "options": {
+      "feature-implement": {
+        "merge_mode": ["auto-merge", "stop-before-merge", "ask"]
+      },
+      "ship": {
+        "auto_ship": ["confident", "always-manual", "ask"]
+      }
+    }
+  },
+
   "rest_api": {
     "description": "The REST surface the `galy` CLI uses (gooal PmContentController), same Bearer auth. Read side only + the markdown body round-trip. Content bodies are raw markdown whose sections are delimited by <!-- @field <name> --> and composed/parsed server-side.",
     "base": "https://<your-workspace>.galy.cloud",
@@ -286,8 +298,8 @@
       "kind": "read",
       "description": "Collapse the workspace policy and the user's preference for one skill+option into a single answer, and say who decided. The administrator's policy (allow | deny | user_choice) outranks the user's value; a skill must call this before offering any choice, or it offers a control the user may not have. An unreadable policy is never permission.",
       "params": [
-        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash, e.g. 'onboarding'." },
-        { "name": "option", "type": "string", "required": true, "description": "Option name, e.g. 'auto_ship'." }
+        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash.", "enum": ["feature-implement", "ship"] },
+        { "name": "option", "type": "string", "required": true, "description": "Option name. Must belong to the skill named above - see workflow_options.", "enum": ["auto_ship", "merge_mode"] }
       ],
       "returns": { "success": "bool", "effective": "allow | deny | ask", "decided_by": "admin | user | default", "admin_policy": "allow | deny | user_choice | null", "user_value": "string | null", "settings_url": "string (the page on the user's Galy account where both layers are visible)" }
     },
@@ -304,9 +316,9 @@
       "kind": "write",
       "description": "Persist (upsert) one workflow preference for the current user. value is the canonical machine string the skill expects (e.g. 'on', 'off', 'ask').",
       "params": [
-        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash, e.g. 'feature-implement'." },
-        { "name": "option", "type": "string", "required": true, "description": "Option key, e.g. 'merge_mode'." },
-        { "name": "value", "type": "string", "required": true, "description": "Canonical value, e.g. 'confident', 'off', 'ask'." }
+        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash.", "enum": ["feature-implement", "ship"] },
+        { "name": "option", "type": "string", "required": true, "description": "Option key. Must belong to the skill named above - see workflow_options.", "enum": ["auto_ship", "merge_mode"] },
+        { "name": "value", "type": "string", "required": true, "description": "Canonical machine value accepted by that option - see workflow_options. Never a localized label.", "enum": ["always-manual", "ask", "auto-merge", "confident", "stop-before-merge"] }
       ],
       "returns": { "success": "bool", "user_id": "int", "skill": "string", "option": "string", "value": "string" }
     },
@@ -315,8 +327,8 @@
       "kind": "write",
       "description": "Remove one workflow preference so the skill falls back to its built-in default.",
       "params": [
-        { "name": "skill", "type": "string", "required": true },
-        { "name": "option", "type": "string", "required": true }
+        { "name": "skill", "type": "string", "required": true, "enum": ["feature-implement", "ship"] },
+        { "name": "option", "type": "string", "required": true, "enum": ["auto_ship", "merge_mode"] }
       ],
       "returns": { "success": "bool", "user_id": "int", "skill": "string", "option": "string" }
     },

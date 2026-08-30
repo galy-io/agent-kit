@@ -252,6 +252,101 @@ function scanCriterionCoverage() {
   console.log(`  [${ok ? "PASS" : "FAIL"}] agents: every criterion owned exactly once — ${detail}`);
 }
 
+// Every workflow option a skill cites is declared, and every option declared is read.
+//
+// Both directions, because both have already gone wrong. An option cited but not declared is how
+// a catalogue starts showing a setting nothing honours: `ship`/`auto_commit` was written into the
+// product's workflow page from a suggestion, while the skills only ever read `ship`/`auto_ship`
+// and `feature-implement`/`merge_mode` - a page offering a control that did not exist. An option
+// declared but never read is the same lie from the other end: the ghost setting a user can toggle
+// forever with nothing changing.
+//
+// This is not zeal. Removing this check restores exactly the failure it was written for.
+function scanWorkflowOptions() {
+  const vocabulary = CONTRACT.workflow_options?.options;
+  if (!vocabulary) {
+    fail("workflow options: the contract declares no vocabulary");
+    return;
+  }
+
+  const declared = new Map();          // "skill.option" -> owning skill
+  const skillNames = new Set();
+  const optionNames = new Set();
+  const valueNames = new Set();
+  for (const [skill, options] of Object.entries(vocabulary)) {
+    skillNames.add(skill);
+    for (const [option, values] of Object.entries(options)) {
+      declared.set(`${skill}.${option}`, skill);
+      optionNames.add(option);
+      for (const value of values) valueNames.add(value);
+    }
+  }
+
+  // (a) The enums on the verbs say the same thing as the vocabulary they claim to enforce.
+  const expected = {
+    skill: [...skillNames].sort(),
+    option: [...optionNames].sort(),
+    value: [...valueNames].sort(),
+  };
+  const disagreements = [];
+  for (const tool of CONTRACT.tools.filter((t) => /^workflow_(default_set|default_unset|policy_resolve)$/.test(t.name))) {
+    for (const param of tool.params ?? []) {
+      const want = expected[param.name];
+      if (!want) continue;
+      const got = [...(param.enum ?? [])].sort();
+      if (got.length === 0) disagreements.push(`${tool.name}.${param.name} declares no enum`);
+      else if (got.join("|") !== want.join("|")) disagreements.push(`${tool.name}.${param.name} = [${got}] but the vocabulary says [${want}]`);
+    }
+  }
+  record("workflow options: the verb enums match the vocabulary", disagreements.length === 0,
+    disagreements.length ? disagreements.join("; ") : `${declared.size} options across ${skillNames.size} skills`);
+
+  // (b) Both directions against what the skills actually say.
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+  const skillsDir = join(root, "skills");
+  const realSkills = new Set(readdirSync(skillsDir));
+  const sources = [];
+  for (const name of realSkills) sources.push([`skills/${name}`, join(skillsDir, name, "SKILL.md")]);
+  const instructionsDir = join(root, "instructions");
+  for (const file of readdirSync(instructionsDir).filter((f) => f.endsWith(".md"))) {
+    sources.push([`instructions/${file}`, join(instructionsDir, file)]);
+  }
+
+  // `<skill>`/`<option>` in prose, or | `<skill>` | `<option>` | in a table. Anchored on a REAL
+  // skill name, without which `file` / `line` and the like read as options.
+  const CITATION = /`([a-z][a-z0-9-]*)`\s*[/|]\s*`([a-z][a-z0-9_]*)`/g;
+  const cited = new Map();             // "skill.option" -> Set of source labels
+  for (const [label, file] of sources) {
+    let body;
+    try { body = readFileSync(file, "utf8"); } catch { continue; }
+    for (const m of body.matchAll(CITATION)) {
+      const [, skill, option] = m;
+      if (!realSkills.has(skill)) continue;
+      const key = `${skill}.${option}`;
+      if (!cited.has(key)) cited.set(key, new Set());
+      cited.get(key).add(label);
+    }
+  }
+
+  const undeclared = [...cited.keys()].filter((k) => !declared.has(k));
+  // An option is "read" when the skill that OWNS it cites it - listing it in the workflows table
+  // or in the instructions proves it is documented, not that anything gates on it.
+  const unread = [...declared.keys()].filter((k) => !cited.get(k)?.has(`skills/${declared.get(k)}`));
+
+  const ok = undeclared.length === 0 && unread.length === 0;
+  const detail = ok
+    ? `${declared.size} declared, each cited by the skill that owns it`
+    : [undeclared.length ? `cited but not declared: ${undeclared.join(", ")}` : null,
+       unread.length ? `declared but not read by its own skill: ${unread.join(", ")}` : null]
+      .filter(Boolean).join("; ");
+  record("workflow options: every option is both declared and read", ok, detail);
+}
+
+function fail(name) {
+  results.push({ name, ok: false });
+  console.log(`  [FAIL] ${name}`);
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
   const writeMode = process.argv.includes("--write");
@@ -264,6 +359,7 @@ async function main() {
   console.log("Static checks (contract file):");
   scanForbidden(CONTRACT.tools, "contract");
   scanCriterionCoverage();
+  scanWorkflowOptions();
 
   if (!token || (!mcpUrl && !restBase)) {
     console.log("\nLive checks skipped — set GALY_ENDPOINT (or GALY_MCP_URL) and GALY_TOKEN to exercise the endpoint.\n");
