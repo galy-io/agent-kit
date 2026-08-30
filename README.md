@@ -54,6 +54,17 @@ above, which does the same thing in one line.
 
 Your token never goes into a tracked file, a shell profile, or the Windows registry.
 
+### How updates reach you
+
+The marketplace tracks this repository, so a skill improved here reaches every installation without
+anyone reinstalling anything — that is the whole point of shipping through a marketplace rather than a
+copy per client. What it does not do is arrive the same second: your agent refreshes its marketplace
+cache on its own schedule. To pull the current state right now:
+
+```
+claude plugin marketplace update galy
+```
+
 ## It starts on its own
 
 Opening Claude Code in a connected repository **triggers the conversation about your practices** — you
