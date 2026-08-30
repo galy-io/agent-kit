@@ -1,6 +1,6 @@
 {
-  "name": "@galy/claude-kit",
-  "description": "Galy project-management kit for Claude Code — strategy, briefs and specs driven by your own assistant. Galy never sees your code.",
+  "name": "@galy/agent-kit",
+  "description": "Galy project-management kit for your coding agent — strategy, briefs and specs driven by your own assistant. Galy never sees your code.",
   "type": "module",
   "private": true,
   "bin": {

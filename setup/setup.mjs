@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// galy-setup — one-command onboarding for the Galy Claude Kit.
+// galy-setup — one-command onboarding for the Galy Agent Kit.
 //
-//   npx -y github:galy-io/claude-kit <token> --endpoint https://<your-workspace>.galy.cloud
+//   npx -y github:galy-io/agent-kit <token> --endpoint https://<your-workspace>.galy.cloud
 //
 // Does four things, in order, each best-effort with a clear message on failure:
 //   a) installs the plugin via the Claude CLI (marketplace add + install), or prints
@@ -28,7 +28,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 
-const MARKETPLACE = "galy-io/claude-kit";
+const MARKETPLACE = "galy-io/agent-kit";
 // The whole directory, not just config.json. `.galy/` also holds workflow-defaults.json, which
 // now carries a consent decision — whether the end of an onboarding sends a retrospective back
 // to Galy. A per-file ignore left that one tracked, so one developer's answer would have been
@@ -84,9 +84,9 @@ function step(msg) { console.log(`\n• ${msg}`); }
 function ok(msg) { console.log(`  ✓ ${msg}`); }
 function warn(msg) { console.log(`  ! ${msg}`); }
 
-const HELP = `galy-setup — connect your Claude Code to your Galy workspace
+const HELP = `galy-setup — connect your agent to your Galy workspace
 
-  npx -y github:galy-io/claude-kit <token> --endpoint https://<your-workspace>.galy.cloud
+  npx -y github:galy-io/agent-kit <token> --endpoint https://<your-workspace>.galy.cloud
 
   <token>       your Galy API token
   --endpoint    the address of your workspace

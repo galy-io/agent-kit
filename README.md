@@ -1,6 +1,6 @@
-# Galy Claude Kit
+# Galy Agent Kit
 
-Drive your work in [Galy](https://galy.io) — strategy, briefs, specs — and let **your own** Claude Code
+Drive your work in [Galy](https://galy.io) — strategy, briefs, specs — and let **your own agent**
 read those objects and implement them **in your own repository**.
 
 Galy is an agent-native project-management tool. You define the *why* (strategy → briefs) and the *how*
@@ -25,7 +25,7 @@ You are connecting *your assistant* to *your Galy workspace* — not giving Galy
 ### Option A — one command (recommended)
 
 ```
-npx -y github:galy-io/claude-kit <your-galy-token> --endpoint https://<your-workspace>.galy.cloud
+npx -y github:galy-io/agent-kit <your-galy-token> --endpoint https://<your-workspace>.galy.cloud
 ```
 
 Both values are on one page in Galy — **Settings → Connect your assistant** — which prints that exact
@@ -41,11 +41,11 @@ host. A guessed host does not fail loudly — it fails as a `401` that reads lik
 ### Option B — via the plugin marketplace
 
 ```
-claude plugin marketplace add galy-io/claude-kit
+claude plugin marketplace add galy-io/agent-kit
 claude plugin install galy
 ```
 
-The plugin declares no MCP server of its own, so it has nothing to connect to yet. Open Claude Code in
+The plugin declares no MCP server of its own, so it has nothing to connect to yet. Open your agent in
 your repository and it will say so and point you at the `connect` skill — or run the `galy-setup`
 command above, which does the same thing in one line.
 
@@ -53,7 +53,7 @@ Your token never goes into a tracked file, a shell profile, or the Windows regis
 
 ## It starts on its own
 
-Opening Claude Code in a connected repository **triggers the conversation about your practices** — you
+Opening your agent in a connected repository **triggers the conversation about your practices** — you
 do not have to know what to type. A `SessionStart` hook hands the session one instruction: read the
 practice baseline through `maturity_challenge` before answering, and open with a single line — where
 you stand, and the one next step. If something is at risk, that comes first.
@@ -183,6 +183,46 @@ galy content push feature-spec 42     # after you edit the buffer
 It reads its config from `GALY_ENDPOINT` / `GALY_TOKEN` or `.galy/config.json`. Like the tools, it only
 carries work items and their text — never your source.
 
+## More than one harness
+
+The kit is written for an agent, not for one vendor's agent. The product already holds that line
+and tests it — its maturity catalogue carries no vendor name, so a client who changes harness keeps
+their score — and this repository is the side the client actually installs, so it has to hold the
+same line.
+
+`galy/skills/` and `galy/agents/` are the source of truth. A projection turns them into the layouts
+Codex reads:
+
+```
+node scripts/build-codex.mjs           # write .agents/skills/ and .codex/agents/
+node scripts/build-codex.mjs --check   # report drift, write nothing (CI)
+```
+
+Two properties make it trustworthy rather than decorative:
+
+- **The transformation is mechanical.** The body markdown is copied byte for byte — published
+  measurements put model-authored instruction files at -20% success rate and +20% inference cost,
+  so no sentence is reworded, shortened or summarised. Everything the projection adds sits above
+  the original text.
+- **Capabilities Codex lacks are declared, never silently dropped.** Each generated file opens with
+  the list of proprietary capabilities its body uses and what to do instead. The reader sees the
+  gap; the text stays intact. Substituting names inside the prose would corrupt code fences and
+  tables, and would be a rewrite.
+
+What the projection currently declares missing:
+
+| Capability | Where | What a Codex session does instead |
+|---|---|---|
+| `AskUserQuestion` | `audit` | Ask in plain text with numbered options and wait — never assume a default |
+| the `galy:` namespace | `adapt`, `audit`, `bug-fix`, `connect`, `autonomy` | One flat namespace: drop the prefix; a `galy:<agent>` is a Codex subagent, a `galy:<skill>` a Codex skill |
+| `${CLAUDE_PLUGIN_ROOT}` | 8 skills | Read the file from `.agents/skills/` relative to the repository |
+| `CronCreate` | `feature-implement` | A scheduled task on the host, with a written stop condition |
+
+The first line is the honest one: `audit` orchestrates through a question only some harnesses can
+ask. Codex reads that it must ask in text and wait, rather than finding the step quietly removed.
+
+The output is gitignored. It is a build artifact, not a second copy to maintain.
+
 ## Layout
 
 ```
@@ -197,8 +237,9 @@ galy/
   contract/pm-v1.json             # the project-management tool + REST contract
   contract/conformance/           # the outward-only conformance suite (MCP + REST)
   bin/galy.mjs                    # the galy CLI
-package.json                      # makes the repo itself runnable: npx -y github:galy-io/claude-kit
+package.json                      # makes the repo itself runnable: npx -y github:galy-io/agent-kit
 setup/setup.mjs                   # the one-command setup
+scripts/build-codex.mjs           # projection into the layouts Codex reads (gitignored output)
 ```
 
 ## License
