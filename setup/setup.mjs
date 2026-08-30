@@ -223,6 +223,17 @@ async function smoke(endpoint, token) {
   Something answers there, but it serves no Galy workspace: the subdomain is probably not
   yours. The exact address is printed on your own "Connect my agent" screen.`);
   }
+  // A 5xx is the instance saying it is unwell, not the address saying it is wrong — and the
+  // commonest cause is the most temporary one: a deployment restarting it. Telling the client
+  // their address is wrong sends them to re-read a URL that was right all along, and the retry
+  // that would have worked is the one thing they do not try.
+  if (health.status >= 500) {
+    fail(`${endpoint} answered HTTP ${health.status} on /health.
+
+  The address is right — something is listening there. The instance itself is unwell, and the
+  usual reason is that it is restarting after a deployment. Wait a minute and run this again.
+  If it persists, whoever operates the instance needs to look; the address is not the problem.`);
+  }
   if (!health.ok) {
     fail(`${endpoint} answered HTTP ${health.status} on /health — that address does not serve a Galy instance.`);
   }
