@@ -293,8 +293,15 @@ async function main() {
   writeConfig(endpoint, token);
   await smoke(endpoint, token);
 
-  console.log("\n✅ Assistant connected — Galy never sees your code.");
-  console.log("   Reopen Claude Code here: a server declared while it was running is only seen");
+  // LE DOSSIER EST NOMMÉ DANS LA CONCLUSION, et pas seulement dans les étapes au-dessus.
+  // `claude mcp add --scope local` et `.galy/config.json` sont tous deux attachés au dossier
+  // courant : lancée ailleurs qu'à la racine du dépôt où le développeur travaille, cette
+  // commande installe, enregistre, teste la connexion et annonce sa réussite pour un projet
+  // qui n'est pas le sien. Rien ne la contredit avant l'agent qui, un quart d'heure plus
+  // tard, ne trouve aucun outil. La ligne du succès est celle qu'on lit : c'est donc elle
+  // qui doit porter de quoi voir l'erreur au moment où elle se commet.
+  console.log(`\n✅ Assistant connected in ${process.cwd()} — Galy never sees your code.`);
+  console.log("   Reopen Claude Code THERE: a server declared while it was running is only seen");
   console.log("   at the next start. It will then tell you where your practices stand.\n");
 }
 
