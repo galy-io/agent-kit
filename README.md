@@ -75,6 +75,7 @@ it, and they work in parallel while the conversation continues.
 
 | Agent | What it observes |
 |---|---|
+| `project-management` | **first, alone** — where briefs, specs, tickets and objectives already live, and whether an assistant can reach them |
 | `ground` | the written doctrine, and whether the infrastructure description still matches reality |
 | `secrets` | the git history, the secret store, and whether production can be read without being able to write |
 | `delivery` | review, quality gate, release trace, rollback, environment isolation — over 90 days of forge history |
@@ -87,14 +88,37 @@ reason — never guessed, never quietly skipped. The questions gate the work; th
 The questions stay in your session on purpose: a subagent cannot reach you, so the orchestrator asks
 and the agents look.
 
+## It fits into what you already have — as a pull request
+
+`project-management` runs **first and alone**, because one fact changes the meaning of everything
+else: *where does your work already live?* A team that tracks its briefs and tickets in an existing
+system will not move them, and should not have to.
+
+What comes out of it is not a report but a **pull request**, opened by `adapt`:
+
+- one **delimited section added** to your root instruction file — who owns what, which id shape
+  belongs to which system, and the rule that nothing existing changes;
+- **skills bound to your environment**, written beside your own — your server names, your id shapes,
+  your branch and commit conventions read from your history.
+
+Name collisions are the common case, not the edge case: a team already working this way has skills
+called `feature-spec` and `feature-implement` too. `adapt` never overwrites one. It either skips
+yours — saying what Galy would have added — or ships its own under a `galy-` prefix, and tells you
+how to tell them apart.
+
+No workflow is edited, no command renamed, no `.mcp.json` touched, and **the pull request is never
+merged**. Your review is the point.
+
 ## What you get
 
-Twelve skills that take a need from idea to shipped, each driven by the Galy objects you manage:
+Fourteen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
 
 | Skill | What it does |
 |---|---|
-| `onboarding` | The first pass: tour the repository, observe where practices stand against the twenty criteria, draft the missing doctrine, record what was seen. |
+| `onboarding` | The first pass: audit how you already track work, open the adapting pull request, observe the twenty criteria, record what was seen. |
+| `adapt` | Turn the kit's generic skills into skills bound to your environment, as a pull request. Never overwrites, never merges. |
 | `connect` | Wire a repository to your workspace, or diagnose a connection that answers nothing. |
+| `bug-fix` | A bug from report to pull request: reproduce first, fix the cause, prove it on the user's own path, leave a follow-up check. |
 | `strategy` | Explore your objectives tree (read-only) and map work to the objective it serves. |
 | `feature-brief` | Frame a business need into a brief — problem, vision, user stories, success criteria. |
 | `feature-spec` | Turn a brief into a technical spec — explore your codebase, design, phases, risks, acceptance tests. |

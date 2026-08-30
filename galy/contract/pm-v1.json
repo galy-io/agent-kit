@@ -395,7 +395,7 @@
       "kind": "write",
       "description": "Record what you OBSERVED for one criterion — never what you assume. Evidence is mandatory except for unverifiable, which needs a reason instead. Never put a secret in the evidence: count and locate, never quote. Read the state it answers with: an unguarded power is stored lower than the state asked for.",
       "params": [
-        { "name": "criterion_id", "type": "string", "required": true, "description": "Criterion key, e.g. secrets_in_store." },
+        { "name": "criterion_id", "type": "string", "required": true, "description": "Criterion key.", "enum": ["doctrine_written", "infrastructure_described", "production_read_only", "no_secrets_in_repo", "tool_contract", "secrets_in_store", "environment_bootstraps", "strategy_in_system", "changes_reviewed", "quality_gate_blocks", "deploy_traced", "rollback_proven", "schema_via_toolpath", "migrations_reversible", "data_fixes_gated", "servers_no_shared_password", "scheduled_loop_fixes", "invariants_monitored", "verified_on_user_surface", "effect_measured"] },
         { "name": "state", "type": "string", "required": true, "description": "observed | partial | absent | unverifiable" },
         { "name": "run_id", "type": "int", "required": true, "description": "Run id from maturity_start_run." },
         { "name": "evidence_md", "type": "string", "required": false, "description": "What you saw, in plain words: counts, dates, paths. Never a secret value." },
