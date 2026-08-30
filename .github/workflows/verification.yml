@@ -1,0 +1,38 @@
+name: verification
+
+# Ce qui doit rester vrai de ce depot, verifie a chaque poussee.
+#
+# Les trois invariants sont decrits dans scripts/validate.mjs, chacun ecrit le jour ou il a ete
+# rompu. Aucun ne casse bruyamment quand il l'est : une skill hors format n'est simplement jamais
+# reprise par l'un des agents, une adresse en dur n'authentifie personne et se lit comme un jeton
+# invalide, et une commande publiee sur aucun registre repond 404 au premier client qui la tape.
+# C'est exactement le genre de defaut qu'une verification automatique attrape et qu'une relecture
+# laisse passer.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Le format des skills, l'absence d'adresse, l'absence de commande fantome
+        run: node scripts/validate.mjs
+
+      # La garantie produit : aucun verbe n'accepte de code, de diff ni de contenu de fichier.
+      # La couche statique ne demande aucun reseau et se joue donc partout.
+      - name: La conformite du contrat, couche statique
+        run: node galy/contract/conformance/runner.mjs
+
+      - name: Les scripts s'analysent
+        run: |
+          node --check setup/setup.mjs
+          node --check galy/bin/galy.mjs
+          node --check galy/hooks/session-start.mjs
+          node --check scripts/validate.mjs

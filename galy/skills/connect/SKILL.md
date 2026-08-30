@@ -17,9 +17,11 @@ Two values, and neither may be typed into a tracked file:
   own name. A kit that assumed one address would authenticate nobody.
 - **their token** — minted by them, shown once.
 
-Both are on the same page, and they never leave the machine: **Connect your assistant**, at
-`https://<their-workspace>.galy.cloud/account/assistant`. Only the workspace owner sees it. The page
-prints the exact command, address already filled in, with a copy button.
+Both are on the same page, and they never leave the machine: **Connect my agent**, in the top bar of
+any screen, at `https://<their-workspace>.galy.cloud/account/assistant`. Every active member of the
+workspace reaches it and mints **their own** token — borrowing an administrator's would attribute
+their check-ins, their writes and every access-log line to somebody else. The page prints the exact
+command, address already filled in, with a copy button.
 
 ## Diagnose first, so you ask for the right thing
 
@@ -35,14 +37,19 @@ Read the answer against these four, which cover nearly every case:
 |---|---|---|
 | no server named `galy` | never connected here | ask for the setup command below |
 | the URL contains `${GALY_MCP_URL}` unexpanded | it is declared through an environment variable nobody set | re-run setup; it registers literal values and stops depending on the shell |
-| `401` / `unauthorized` on any call | the token is revoked, expired, or belongs to another workspace | a new token on the same page, then setup again |
+| `401` / `unauthorized` on any call | the token is revoked, belongs to another workspace, or its bearer's account was closed — the instance refuses a token whose membership is no longer active | a new token on the same page, then setup again; if that also fails, their account itself is closed and only an owner reopens it |
 | `galy` defined in **two** scopes | two definitions, and the local one wins — often the broken one loses silently, or the wrong one wins | keep one: `claude mcp remove galy -s project` or `-s local` |
 
 ## The command
 
 ```
-npx galy-setup <token> --endpoint https://<their-workspace>.galy.cloud
+npx -y github:galy-io/claude-kit <token> --endpoint https://<their-workspace>.galy.cloud
 ```
+
+**Not `npx galy-setup`.** That package is published on no registry: npm answers `E404 Not Found`, and
+a developer who has never seen Galy work concludes the product does not exist. The plugin repository is
+public and `npx` runs it as it is. The day the package is published, the short form comes back — here
+and on the screen, together.
 
 It registers the MCP endpoint for **this project only**, writes `.galy/config.json` for the `galy` CLI,
 makes sure that file is gitignored, and tests the connection before claiming success.
