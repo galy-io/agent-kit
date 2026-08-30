@@ -78,6 +78,26 @@ launcher, the container definition, the documented commands — then for the **i
 agents working in parallel must not destroy each other. Shared ports, one shared database, one
 shared working directory: each is a `partial` with the reason.
 
+Three questions, and the third is the one everybody forgets:
+
+```bash
+git worktree list                 # is there a pool at all, or one shared checkout?
+ls scripts/ bin/ tools/ 2>/dev/null | head -40   # is there a launcher that opens one?
+```
+
+1. **Is there a pool of isolated working copies?** One checkout that every session shares is
+   `absent`, however good the documentation is: a checkout is switched by whoever gets there
+   first, and the person shipping is not told.
+2. **Is opening one the shortest path?** A pool nobody can reach without three commands is a pool
+   nobody uses. Look for the launcher, the desktop entry, the terminal binding.
+3. **Does that launcher update itself?** Read it. If it does not fetch and fast-forward its own
+   checkout before running, every machine is frozen on the day it was installed, and a fix shipped
+   today reaches nobody. A launcher without that is a `partial`, and say which of the three is
+   missing — the fix is not the same one.
+
+When this criterion is not green, the main session has `galy:poste-de-travail` to propose. Do not
+propose it yourself and do not run it: it writes on the machine, and only the main session can ask.
+
 ## Recording
 
 **You do not record. You return.** Writing a finding into the client's workspace is the main
