@@ -54,6 +54,31 @@ for acceptance tests attached to work items, for post-deploy probes, for screens
 checks tied to a release. A test suite that runs before the merge is not this criterion — it runs
 on the build, not on the user's surface.
 
+### First: can the agent reach that surface at all?
+
+**Ask it before anything else.** For a team that ships a web interface, this criterion is
+unreachable without a browser the agent can drive — and it is a capability of the workstation, not
+of the code, so no amount of reading the repository will tell you. It is also the check nobody
+thinks to make: it fails silently, and the team concludes the practice is impossible rather than
+un-installed.
+
+Every harness has such a mechanism and each names it differently — a browser extension paired with
+the desktop application, a driver bundled with the command-line tool, a separate automation server.
+**Name the one this team's harness offers**, and find out whether it is installed, paired, and
+actually answering — not merely present in a list.
+
+Three states, and they are not the same problem:
+
+- **No browser-driving capability at all** → this criterion is `absent` for a web product, and say
+  which capability is missing. It is the cheapest thing on the whole grid to fix.
+- **Installed but never used for a verification** → `partial`. A capability nobody drives proves
+  nothing; the practice is the replay, not the tool.
+- **Installed and used, with a trace** → look for what it left behind: a recording, a screenshot,
+  a check written against the delivered surface.
+
+For a team with no user-facing surface — a library, a batch — say so and record `unverifiable`
+with that reason. Do not mark down a team for lacking a browser it has no use for.
+
 ## `effect_measured`
 
 The loop closes: intent goes down to execution, measurement comes back up to the objective. The
