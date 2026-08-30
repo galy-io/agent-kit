@@ -95,8 +95,9 @@ ls scripts/ bin/ tools/ 2>/dev/null | head -40   # is there a launcher that open
    today reaches nobody. A launcher without that is a `partial`, and say which of the three is
    missing — the fix is not the same one.
 
-When this criterion is not green, the main session has `galy:poste-de-travail` to propose. Do not
-propose it yourself and do not run it: it writes on the machine, and only the main session can ask.
+When this criterion is not green, the catalogue carries the method for putting it in place —
+the main session fetches it if the user asks. **Do not fetch it, do not propose it, do not run
+it**: it writes on the machine, and only the main session can ask.
 
 ## Recording
 
