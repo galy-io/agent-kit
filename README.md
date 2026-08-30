@@ -28,12 +28,15 @@ You are connecting *your assistant* to *your Galy workspace* — not giving Galy
 npx -y github:galy-io/agent-kit <your-galy-token> --endpoint https://<your-workspace>.galy.cloud
 ```
 
-Both values are on one page in Galy — **Settings → Connect your assistant** — which prints that exact
-command with your address already filled in, and a copy button. Only the workspace owner sees it.
+Both values are on one page in Galy — **Connect my agent**, in the top bar of any screen — which prints
+that exact command with your address already filled in, and a copy button. Every active member of the
+workspace reaches it and mints **their own** token: a borrowed one would attribute your check-ins and
+every access-log line to somebody else.
 
-`galy-setup` installs the plugin, registers the MCP endpoint **for that project only** (address and
-token stored literally in Claude Code's local scope, outside your repository), writes
-`.galy/config.json` for the CLI, gitignores it, and tests the connection before saying it worked.
+It installs the plugin, registers the MCP endpoint **for that project only** (address and token stored
+literally in Claude Code's local scope, outside your repository), writes `.galy/config.json` for the
+CLI, gitignores it, and proves the connection before saying it worked — by shaking hands with `/mcp`,
+the door your assistant will actually use, rather than with the REST surface it will not.
 
 There is no default address, on purpose: Galy is multi-tenant, and every workspace answers on its own
 host. A guessed host does not fail loudly — it fails as a `401` that reads like a bad token.
@@ -50,6 +53,17 @@ your repository and it will say so and point you at the `connect` skill — or r
 command above, which does the same thing in one line.
 
 Your token never goes into a tracked file, a shell profile, or the Windows registry.
+
+### How updates reach you
+
+The marketplace tracks this repository, so a skill improved here reaches every installation without
+anyone reinstalling anything — that is the whole point of shipping through a marketplace rather than a
+copy per client. What it does not do is arrive the same second: your agent refreshes its marketplace
+cache on its own schedule. To pull the current state right now:
+
+```
+claude plugin marketplace update galy
+```
 
 ## It starts on its own
 
