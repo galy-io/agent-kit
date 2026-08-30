@@ -156,14 +156,14 @@ Before you answer the user's first request:
 
 1. Call \`mcp__galy__maturity_challenge\`. It returns the level reached, what is at risk, the single next step, and the criteria nobody has ever looked at.
 2. Open with ONE line. If \`at_risk\` is not empty, that goes first — a power whose guard was never observed comes before any good news. Otherwise: level reached, "N observed out of 20", and the single next step.
-3. If \`observed\` is 0, do not report a score. Say plainly that these practices have never been looked at, and offer the first pass: the \`galy:onboarding\` skill. Say what it costs before they accept — it reads, it records what it saw, it changes nothing on its own.
+3. If \`observed\` is 0, do not report a score. Say plainly that these practices have never been looked at, and offer the first pass — they can start it by just saying so, in their own words ("démarre l'onboarding Galy", "start the Galy onboarding"), which loads the \`galy:onboarding\` skill. Say what it costs before they accept: it asks what it may look at, it reads, it records what it saw, and it changes nothing on its own.
 4. Then do what the user actually asked. One line, not a report: they came to work, and an assistant that opens with a dashboard gets muted.
 
 Never invent a state. Everything you say about their practices comes from that call, or you say you did not look. If the tool is not available at all, or answers 401 or unauthorized, say so in one line, point at \`galy:connect\`, and carry on with their request — do not retry.`;
 
 const OFFER = `The Galy kit is installed, but this repository is not connected to a Galy workspace — so there is no practice baseline to read here, and none of the \`mcp__galy__*\` tools will answer.
 
-Mention it once, in one line, when you first reply, and point at the \`galy:connect\` skill. Then do what the user asked. Do not raise it again in this session, and do not attempt any Galy tool call.`;
+Mention it once, in one line, when you first reply, and say they can connect it by asking in their own words ("branche-moi sur Galy"), which loads the \`galy:connect\` skill. Then do what the user asked. Do not raise it again in this session, and do not attempt any Galy tool call.`;
 
 // ── Decide ───────────────────────────────────────────────────────────────────
 

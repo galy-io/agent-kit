@@ -18,7 +18,7 @@
 //
 // Exit code 0 = all checks pass, 1 = at least one failure.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -212,6 +212,46 @@ async function runRest(base, token) {
   console.log(`  Documented routes (id-scoped ones not smoked): ${routes.map((r) => r.path).join(", ") || "none in contract"}`);
 }
 
+// Every maturity criterion is owned by exactly one agent of the kit.
+//
+// The failure this prevents is silent by nature: a criterion nobody owns is never observed, so it
+// stays grey forever and reads as "we did not get to it" rather than "nobody is looking". A
+// criterion owned twice is worse — two agents record it in the same run, and the last one wins
+// without either knowing.
+function scanCriterionCoverage() {
+  const record = CONTRACT.tools.find((t) => t.name === "maturity_record");
+  const ids = record?.params?.find((p) => p.name === "criterion_id")?.enum;
+  if (!ids) {
+    results.push({ name: "agents: criterion coverage", ok: false, detail: "the contract declares no criterion vocabulary" });
+    console.log("  [FAIL] agents: criterion coverage — the contract declares no criterion vocabulary");
+    return;
+  }
+
+  const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "agents");
+  const owners = new Map(ids.map((id) => [id, []]));
+  let agents = 0;
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".md"))) {
+    agents++;
+    const body = readFileSync(join(dir, file), "utf8");
+    const name = file.replace(/\.md$/, "");
+    // Owned = the criterion has its own section in that agent's procedure.
+    for (const id of ids) {
+      if (new RegExp("^## `" + id + "`", "m").test(body)) owners.get(id).push(name);
+    }
+  }
+
+  const orphans = ids.filter((id) => owners.get(id).length === 0);
+  const shared = ids.filter((id) => owners.get(id).length > 1);
+  const ok = orphans.length === 0 && shared.length === 0;
+  const detail = ok
+    ? `${ids.length} criteria, ${agents} agents, each owned once`
+    : [orphans.length ? `owned by nobody: ${orphans.join(", ")}` : null,
+       shared.length ? `owned twice: ${shared.map((id) => `${id} (${owners.get(id).join(" + ")})`).join(", ")}` : null]
+      .filter(Boolean).join("; ");
+  results.push({ name: "agents: every criterion owned exactly once", ok, detail });
+  console.log(`  [${ok ? "PASS" : "FAIL"}] agents: every criterion owned exactly once — ${detail}`);
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
   const writeMode = process.argv.includes("--write");
@@ -223,6 +263,7 @@ async function main() {
 
   console.log("Static checks (contract file):");
   scanForbidden(CONTRACT.tools, "contract");
+  scanCriterionCoverage();
 
   if (!token || (!mcpUrl && !restBase)) {
     console.log("\nLive checks skipped — set GALY_ENDPOINT (or GALY_MCP_URL) and GALY_TOKEN to exercise the endpoint.\n");
