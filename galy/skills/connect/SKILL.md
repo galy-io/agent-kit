@@ -1,12 +1,42 @@
 ---
 name: connect
-description: Connect this repository to a Galy workspace, or diagnose a connection that is not answering — 401, wrong address, missing token, two servers with the same name. Registers the MCP endpoint for this project without the user pasting anything into a config file, and never writes a token into a committable file.
+description: Connect this repository to a Galy workspace — opening one first if the user has none, without ever sending them to a page they cannot sign in to. Also diagnoses a connection that is not answering — 401, wrong address, missing token, two servers with the same name. Registers the MCP endpoint for this project without the user pasting anything into a config file, and never writes a token into a committable file.
 ---
 
 # connect — wire this repository to a Galy workspace
 
 The user is here because the `mcp__galy__*` tools answer nothing, or because they have never connected.
-Both cases end the same way: one `galy-setup` command, run in their repository.
+
+## First, the question they should never have to answer themselves
+
+**Do they already have a Galy workspace?**
+
+Ask it plainly, once, before anything else — and ask it as a person would, not as a system: *"Vous avez
+déjà un espace Galy, ou on en ouvre un ?"* The user is not thinking "am I enrolling or connecting"; they
+want their repository to talk to Galy. Which of the two paths that takes is your problem, not theirs.
+
+**They have one** — the rest of this skill applies. Diagnose, then the setup command.
+
+**They do not** — do not send them to the "Connect my agent" page. It is behind a sign-in to a workspace
+they do not have, and pointing at it is a dead end dressed as an instruction. Use the enrolment verbs
+instead: they exist for exactly this case.
+
+| Verb | What it does |
+|---|---|
+| `enrolment_request_code(email)` | sends a one-time code to that address, and answers the same whether the address is known or not |
+| `enrolment_redeem_code(handle, code, plan)` | exchanges the code for an API token, creating the user and the workspace if needed |
+
+They live on a separate, unauthenticated entry point — `/mcp-signup` on the instance — because the main
+one refuses everything without a token, which is the chicken-and-egg this path exists to break. An
+anonymous caller sees those two verbs and nothing else.
+
+The plan is asked with `AskUserQuestion`, in the user's language, and **the free tier and the dedicated
+database open immediately**; the two above them record an intent and say what happens next. Say, in the
+same breath, the thing that a price shown in a terminal otherwise implies: **choosing a paid tier here
+commits nothing and charges nothing** — no contract, no payment method asked for or kept.
+
+Then continue with the token you just obtained, exactly as if they had pasted one: the rest of this
+skill does not care where it came from.
 
 ## What has to be true
 
