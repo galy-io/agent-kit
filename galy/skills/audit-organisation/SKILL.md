@@ -104,8 +104,8 @@ a subject agent comes back, you have its whole batch: put the non-green ones tog
 in one line each, and ask once with `AskUserQuestion`:
 
 > **Avant d'écrire ces constats dans votre espace :**
-> — <critère> : <état> parce que <fait>
-> — <critère> : <état> parce que <fait>
+> — <la pratique, en clair> : <l'état, en clair> parce que <fait>
+> — <la pratique, en clair> : <l'état, en clair> parce que <fait>
 >
 > Question : « C'est juste ? »
 > — *Oui, enregistre* (recommandé)
@@ -211,8 +211,15 @@ A refusal costs nothing: record the criteria anyway and close without hanging th
 
 On screen, one line, and it answers what a human actually wants to know:
 
-> `<critère>` — **<état>** : <le fait qui a décidé>.
+> **<la pratique, en clair>** — <l'état, en clair> : <le fait qui a décidé>.
 
+- **the practice, in plain words, in the user's language.** NEVER its identifier. `doctrine_written`
+  and `schema_via_toolpath` are database keys: they are how the tools address a criterion, not how
+  a person reads one. Every call returns `name` beside the key — use that, or say the thing
+  yourself. A line the user has to decode is a line they skip, and twenty skipped lines is the
+  whole pass.
+- **the state in plain words too.** "constaté", "partiel", "absent", "pas vérifiable" — not
+  `observed`, not `partial`. Same reason.
 - **the fact that decided it**: a count, a date, a path. Never a secret value, never a paraphrase
   of the criterion's own name.
 - **the state you recorded**, read back from what `mcp__galy__maturity_record` returned rather than
@@ -273,8 +280,10 @@ more and close on **what it returns**, not on what you remember. Four lines, and
 
 1. **The count**, with its full denominator: "6 observés sur 20, dont 9 non vérifiables". Never a
    percentage of what you managed to look at.
-2. **What is at risk**, if anything — first, before the good news.
-3. **One next step**, with its duration and its risk. Not a shopping list: one step.
+2. **What is at risk**, if anything — first, before the good news, and **in plain words**: say
+   the power the team has and say that nothing was seen guarding it. Never the identifier.
+3. **One next step**, with its duration and its risk. Not a shopping list: one step — and named
+   the way a developer would name it, not the way the database stores it.
 4. **The link to the maturity page**, and it is the last line of the pass.
 
 **Give the URL the tool returns. Never build one.** The address of a Galy instance is not
