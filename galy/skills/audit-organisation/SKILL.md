@@ -55,24 +55,17 @@ preference.
 If this harness has no way to launch agents, do the whole pass yourself, in the same order, with
 the same discipline. Each agent's file is a readable procedure — follow it.
 
-## Say this before you ask anything
-
-Out loud, in the user's language, in four lines. It is what makes the pass acceptable:
-
-- **You change nothing.** Everything you write is proposed, never applied, never committed.
-- **You send nothing outside.** No source, no host name, no evidence leaves the machine. Galy
-  receives observations about practices; it never receives code.
-- **You never copy a secret.** What is found is counted and located; its value goes nowhere.
-- **You attempt no forbidden action**, and nothing the user has not just authorised.
-
-And announce the expected result **before** starting, not after: a first pass where half the grid
-is grey is normal. A first pass that came out all green would be suspicious.
-
 ## The order
 
 ### 1. Say which workspace this is going to be written into
 
-**Before anything else, one line naming it.** `mcp__galy__whoami` answers who the token belongs to
+**Before anything else, one line naming it.** Not a preamble — a fact the user cannot check
+themselves. Everything the pass promises about itself (it changes nothing, it sends nothing out,
+it copies no secret) is **already written on the page they read before installing this**, and
+reciting it costs them attention they came to spend on their own repository. Say what they cannot
+know: which workspace answers.
+
+ `mcp__galy__whoami` answers who the token belongs to
 and which workspace it opens; say the workspace's name out loud.
 
 It is not a formality. A developer can reach several — their own, a customer demonstration, a
