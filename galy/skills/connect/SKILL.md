@@ -58,8 +58,14 @@ command, address already filled in, with a copy button.
 Run these before saying anything. They are read-only and cost a second.
 
 ```bash
-claude mcp get galy        # what is registered for this project, and in which scope
+claude mcp list            # the address and the state, for every server
 ```
+
+**Never `claude mcp get galy`.** It prints the `Authorization` header **in full**, so the token
+lands in the transcript — which is uploaded on many setups, and which this very skill tells you a
+token must never enter. `list` gives the address and the state, which answers all four rows below.
+On the rare occasion the scope is genuinely in doubt, ask the user to run `get` themselves with `!`
+so the value stays in their terminal and out of the conversation.
 
 Read the answer against these four, which cover nearly every case:
 
@@ -92,7 +98,7 @@ conversation is a token in a log, in a backup, and in whatever the transcript is
 
 Say what changed, in one line, then get out of the way — the user came to work, not to configure.
 
-If this repository has never been observed, offer the `galy:audit` skill: it tours the ground, says
+If this repository has never been observed, offer the `galy:audit-organisation` skill: it tours the ground, says
 where the practices stand against the twenty criteria, and records what it saw. It reads and proposes;
 it changes nothing on its own.
 
