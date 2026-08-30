@@ -15,7 +15,7 @@ Against a live endpoint — set `GALY_ENDPOINT` (the host) and `GALY_TOKEN`. The
 url (`<endpoint>/mcp`) and the REST base from it, and exercises both surfaces:
 
 ```
-GALY_ENDPOINT=https://gooal-prod.azurewebsites.net GALY_TOKEN=<token> node runner.mjs
+GALY_ENDPOINT=https://<your-workspace>.galy.cloud GALY_TOKEN=<token> node runner.mjs
 ```
 
 (You can pin the MCP url separately with `GALY_MCP_URL` if it differs.) Exit code `0` = all checks pass,
