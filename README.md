@@ -63,12 +63,12 @@ nothing to do with Galy. A repository that has never been observed is offered th
 repository already connected is challenged at most once every twelve hours.
 
 Nothing has to be typed as a command. **A plain sentence starts the first pass** — "démarre
-l'onboarding Galy", "start the Galy onboarding", "où en sont nos pratiques ?" — and the `onboarding`
-skill takes it from there.
+l'onboarding Galy", "start the Galy onboarding", "où en sont nos pratiques ?", "fais le point" — and
+the `audit` skill takes it from there.
 
 ## The first pass is a conversation, not a script
 
-`onboarding` orchestrates from your own session: it opens the pass, runs the probes the instance can
+`audit` orchestrates from your own session: it opens the pass, runs the probes the instance can
 run alone, then **asks you what it may look at** — the repository and its history, the forge, the
 infrastructure, production in read. Each authorised surface immediately puts a **subject agent** on
 it, and they work in parallel while the conversation continues.
@@ -148,7 +148,7 @@ Fifteen skills that take a need from idea to shipped, each driven by the Galy ob
 
 | Skill | What it does |
 |---|---|
-| `onboarding` | The first pass: audit how you already track work, open the adapting pull request, observe the twenty criteria, record what was seen. |
+| `audit` | Where your practices stand, first pass and every one after: audit how you already track work, open the adapting pull request, observe the twenty criteria, record what was seen. Applies nothing. |
 | `adapt` | Turn the kit's generic skills into skills bound to your environment, as a pull request. Never overwrites, never merges. |
 | `connect` | Wire a repository to your workspace, or diagnose a connection that answers nothing. |
 | `workflows` | See and change what the skills may do on your behalf — and what your administrator decided for everyone. |

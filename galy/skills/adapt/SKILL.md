@@ -12,6 +12,20 @@ an added section in the root instruction file, and adapted skills beside their e
 **Nothing existing changes.** Not one command, not one workflow, not one convention. If the only
 way to use Galy were to move their work items, they would keep the work items and drop Galy.
 
+## The pull request is the judge, and there is no gate before it
+
+**Do not add an approval step in front of this.** Not a confirmation prompt, not a page to click,
+not a "shall I proceed?" — the pull request already is the review, and a second door in front of
+the first is ceremony charged at the worst possible moment: a team's very first pass.
+
+The reason is that **everything this skill produces is a file in their repository**. A pull request
+shows the exact diff, changes nothing until someone merges, and travels through the process they
+already have — which is the whole principle the kit is built on. Nothing here escapes that diff.
+
+An authenticated approval earns its place only for an act that leaves **no diff to read**: sharing
+something outside the tenant, switching on an automation, granting a right. Those have their own
+pages in the product. Putting files in a repository has one too, and it is the pull request.
+
 ## What it needs before it starts
 
 The **binding proposal** from `galy:project-management` — which system owns briefs, specs,
