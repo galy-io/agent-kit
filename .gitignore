@@ -11,3 +11,7 @@ npm-debug.log*
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# Codex projection — build output of scripts/build-codex.mjs, never a second copy to maintain.
+.agents/
+.codex/

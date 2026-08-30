@@ -2,7 +2,7 @@
 // galy — cross-platform CLI for the Galy project-management API.
 //
 // Talks REST to /api/pm/* on your Galy endpoint. Mirrors the read side of the MCP
-// verbs your Claude Code uses, but is shell-friendly: search work items, read
+// verbs your agent uses, but is shell-friendly: search work items, read
 // compact JSON cards, and pull/push the large markdown body of a brief or spec as
 // a local file so you never shove a whole body through a tool argument.
 //

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// galy-setup — one-command onboarding for the Galy Claude Kit.
+// galy-setup — one-command onboarding for the Galy Agent Kit.
 //
 //   npx -y github:galy-io/agent-kit <token> --endpoint https://<your-workspace>.galy.cloud
 //
@@ -84,7 +84,7 @@ function step(msg) { console.log(`\n• ${msg}`); }
 function ok(msg) { console.log(`  ✓ ${msg}`); }
 function warn(msg) { console.log(`  ! ${msg}`); }
 
-const HELP = `galy-setup — connect your Claude Code to your Galy workspace
+const HELP = `galy-setup — connect your agent to your Galy workspace
 
   npx -y github:galy-io/agent-kit <token> --endpoint https://<your-workspace>.galy.cloud
 

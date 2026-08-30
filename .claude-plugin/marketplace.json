@@ -5,7 +5,7 @@
     {
       "name": "galy",
       "source": "./galy",
-      "description": "Galy project-management kit: strategy → briefs → specs → code, driven by your own Claude Code."
+      "description": "Galy project-management kit: strategy → briefs → specs → code, driven by your own agent."
     }
   ]
 }

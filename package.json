@@ -1,7 +1,7 @@
 {
   "name": "@galy/agent-kit-repo",
   "version": "1.0.0",
-  "description": "Galy Claude Kit — one-command setup, runnable straight from this repository with npx.",
+  "description": "Galy Agent Kit — one-command setup, runnable straight from this repository with npx.",
   "type": "module",
   "private": false,
   "bin": {
@@ -13,5 +13,9 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "SEE LICENSE IN LICENSE"
+  "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "build:codex": "node scripts/build-codex.mjs",
+    "check:codex": "node scripts/build-codex.mjs --check"
+  }
 }
