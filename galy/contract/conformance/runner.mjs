@@ -170,9 +170,103 @@ async function runMcp(url, token, writeMode) {
     }
   }
 
+  await scanLiveWorkflowCatalog(client, liveNames);
+
   if (writeMode) {
     console.log("  --write: write exercises are intentionally not run — they mutate the workspace.");
   }
+}
+
+// The contract's vocabulary against the one the instance actually serves.
+//
+// The static check closes the repository on itself: options declared, options cited, verb enums -
+// all of it agrees, and all of it lives in the same repository reading itself. THIS check holds
+// the gap between the repository and the instance, and that gap is what produced both of the
+// day's lies: a catalogue offering `ship`/`auto_commit` that no skill read, and a divergence that
+// came through the VALUES rather than the names. A page can only offer a setting nothing honours
+// when nobody compares the two sides.
+//
+// So names are not enough. Compare values too, or the next drift arrives as `auto_ship` taking
+// on/off here and confident/always-manual there, both catalogues listing the same option name,
+// both test suites green.
+//
+// WHAT THIS CHECK DOES NOT SEE. It compares LISTS. It cannot tell whether a value the instance
+// advertises would actually be accepted on the way in - a value announced and then refused at
+// write time is a drift of BEHAVIOUR, and no reading of a catalogue reveals it. That one is held
+// on the product side by `EveryAnsweredValueIsOneTheInstanceWouldAccept`, and it belongs there:
+// proving it requires writing, and this check writes nothing, ever. Do not extend it to try. A
+// check that lets its reader believe it verifies more than it does is the false comfort this
+// whole suite exists to remove.
+async function scanLiveWorkflowCatalog(client, liveNames) {
+  const VERB = "workflow_catalog_list";
+  const CHECK = "workflow catalog matches the contract";
+  if (!liveNames.has(VERB)) {
+    console.log(`  [SKIP] workflow catalog: the instance does not advertise '${VERB}' yet, so the`);
+    console.log("         contract vocabulary cannot be compared to what it really serves.");
+    return;
+  }
+
+  // The field name is read strictly, on purpose. A reader that also accepted `options` or
+  // `catalog` would happily digest a future version that renamed the field, compare an empty list
+  // against an empty list, and report "aligned" having compared nothing at all.
+  let served;
+  try {
+    const out = await client.callTool(VERB, {});
+    if (!out || out.success !== true) {
+      return record(CHECK, false, `envelope: ${JSON.stringify(out).slice(0, 160)}`);
+    }
+    if (!Array.isArray(out.workflow_options)) {
+      return record(CHECK, false,
+        `no 'workflow_options' array in the answer (keys: ${Object.keys(out).join(", ")})`);
+    }
+    served = new Map();
+    for (const row of out.workflow_options) {
+      if (!row?.skill || !row?.option) continue;
+      served.set(`${row.skill}.${row.option}`, {
+        values: new Set(row.values ?? []),
+        fallback: row.default_when_unset,
+      });
+    }
+  } catch (e) {
+    return record(CHECK, false, e.message);
+  }
+
+  const declared = new Map();
+  for (const [skill, options] of Object.entries(CONTRACT.workflow_options?.options ?? {})) {
+    for (const [option, values] of Object.entries(options)) {
+      declared.set(`${skill}.${option}`, new Set(values));
+    }
+  }
+
+  // Sets, never sequences. `values` are canonical strings in catalogue order, and the day someone
+  // reorders that catalogue an order-sensitive check would cry drift where there is none - and a
+  // check that cries wrongly is deleted within the month.
+  const sameSet = (a, b) => a.size === b.size && [...a].every((v) => b.has(v));
+  const show = (set) => [...set].sort().join(",");
+
+  const onlyInstance = [...served.keys()].filter((k) => !declared.has(k));
+  const onlyContract = [...declared.keys()].filter((k) => !served.has(k));
+  const valueGaps = [...declared.keys()]
+    .filter((k) => served.has(k) && !sameSet(declared.get(k), served.get(k).values))
+    .map((k) => `${k}: contract [${show(declared.get(k))}] vs instance [${show(served.get(k).values)}]`);
+
+  // A default outside its own vocabulary resolves, displays, and is read by nothing - while both
+  // catalogues still agree on every name. The product holds this with an invariant of its own;
+  // this check sees an ANSWER rather than an invariant, which is the reason to look from here too.
+  const badFallbacks = [...served.entries()]
+    .filter(([, v]) => v.fallback !== undefined && v.fallback !== null && !v.values.has(v.fallback))
+    .map(([k, v]) => `${k}: default_when_unset '${v.fallback}' is not among [${show(v.values)}]`);
+
+  const ok = onlyInstance.length === 0 && onlyContract.length === 0
+    && valueGaps.length === 0 && badFallbacks.length === 0;
+  const detail = ok
+    ? `${declared.size} options, same names and same value sets, every default within its own values`
+    : [onlyInstance.length ? `served but not in the contract: ${onlyInstance.join(", ")}` : null,
+       onlyContract.length ? `in the contract but not served: ${onlyContract.join(", ")}` : null,
+       valueGaps.length ? `values differ - ${valueGaps.join("; ")}` : null,
+       badFallbacks.length ? `default outside its values - ${badFallbacks.join("; ")}` : null]
+      .filter(Boolean).join("; ");
+  record(CHECK, ok, detail);
 }
 
 // ── Live REST layer (the routes the galy CLI uses) ───────────────────────────
@@ -252,6 +346,101 @@ function scanCriterionCoverage() {
   console.log(`  [${ok ? "PASS" : "FAIL"}] agents: every criterion owned exactly once — ${detail}`);
 }
 
+// Every workflow option a skill cites is declared, and every option declared is read.
+//
+// Both directions, because both have already gone wrong. An option cited but not declared is how
+// a catalogue starts showing a setting nothing honours: `ship`/`auto_commit` was written into the
+// product's workflow page from a suggestion, while the skills only ever read `ship`/`auto_ship`
+// and `feature-implement`/`merge_mode` - a page offering a control that did not exist. An option
+// declared but never read is the same lie from the other end: the ghost setting a user can toggle
+// forever with nothing changing.
+//
+// This is not zeal. Removing this check restores exactly the failure it was written for.
+function scanWorkflowOptions() {
+  const vocabulary = CONTRACT.workflow_options?.options;
+  if (!vocabulary) {
+    fail("workflow options: the contract declares no vocabulary");
+    return;
+  }
+
+  const declared = new Map();          // "skill.option" -> owning skill
+  const skillNames = new Set();
+  const optionNames = new Set();
+  const valueNames = new Set();
+  for (const [skill, options] of Object.entries(vocabulary)) {
+    skillNames.add(skill);
+    for (const [option, values] of Object.entries(options)) {
+      declared.set(`${skill}.${option}`, skill);
+      optionNames.add(option);
+      for (const value of values) valueNames.add(value);
+    }
+  }
+
+  // (a) The enums on the verbs say the same thing as the vocabulary they claim to enforce.
+  const expected = {
+    skill: [...skillNames].sort(),
+    option: [...optionNames].sort(),
+    value: [...valueNames].sort(),
+  };
+  const disagreements = [];
+  for (const tool of CONTRACT.tools.filter((t) => /^workflow_(default_set|default_unset|policy_resolve)$/.test(t.name))) {
+    for (const param of tool.params ?? []) {
+      const want = expected[param.name];
+      if (!want) continue;
+      const got = [...(param.enum ?? [])].sort();
+      if (got.length === 0) disagreements.push(`${tool.name}.${param.name} declares no enum`);
+      else if (got.join("|") !== want.join("|")) disagreements.push(`${tool.name}.${param.name} = [${got}] but the vocabulary says [${want}]`);
+    }
+  }
+  record("workflow options: the verb enums match the vocabulary", disagreements.length === 0,
+    disagreements.length ? disagreements.join("; ") : `${declared.size} options across ${skillNames.size} skills`);
+
+  // (b) Both directions against what the skills actually say.
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+  const skillsDir = join(root, "skills");
+  const realSkills = new Set(readdirSync(skillsDir));
+  const sources = [];
+  for (const name of realSkills) sources.push([`skills/${name}`, join(skillsDir, name, "SKILL.md")]);
+  const instructionsDir = join(root, "instructions");
+  for (const file of readdirSync(instructionsDir).filter((f) => f.endsWith(".md"))) {
+    sources.push([`instructions/${file}`, join(instructionsDir, file)]);
+  }
+
+  // `<skill>`/`<option>` in prose, or | `<skill>` | `<option>` | in a table. Anchored on a REAL
+  // skill name, without which `file` / `line` and the like read as options.
+  const CITATION = /`([a-z][a-z0-9-]*)`\s*[/|]\s*`([a-z][a-z0-9_]*)`/g;
+  const cited = new Map();             // "skill.option" -> Set of source labels
+  for (const [label, file] of sources) {
+    let body;
+    try { body = readFileSync(file, "utf8"); } catch { continue; }
+    for (const m of body.matchAll(CITATION)) {
+      const [, skill, option] = m;
+      if (!realSkills.has(skill)) continue;
+      const key = `${skill}.${option}`;
+      if (!cited.has(key)) cited.set(key, new Set());
+      cited.get(key).add(label);
+    }
+  }
+
+  const undeclared = [...cited.keys()].filter((k) => !declared.has(k));
+  // An option is "read" when the skill that OWNS it cites it - listing it in the workflows table
+  // or in the instructions proves it is documented, not that anything gates on it.
+  const unread = [...declared.keys()].filter((k) => !cited.get(k)?.has(`skills/${declared.get(k)}`));
+
+  const ok = undeclared.length === 0 && unread.length === 0;
+  const detail = ok
+    ? `${declared.size} declared, each cited by the skill that owns it`
+    : [undeclared.length ? `cited but not declared: ${undeclared.join(", ")}` : null,
+       unread.length ? `declared but not read by its own skill: ${unread.join(", ")}` : null]
+      .filter(Boolean).join("; ");
+  record("workflow options: every option is both declared and read", ok, detail);
+}
+
+function fail(name) {
+  results.push({ name, ok: false });
+  console.log(`  [FAIL] ${name}`);
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
   const writeMode = process.argv.includes("--write");
@@ -264,9 +453,12 @@ async function main() {
   console.log("Static checks (contract file):");
   scanForbidden(CONTRACT.tools, "contract");
   scanCriterionCoverage();
+  scanWorkflowOptions();
 
   if (!token || (!mcpUrl && !restBase)) {
-    console.log("\nLive checks skipped — set GALY_ENDPOINT (or GALY_MCP_URL) and GALY_TOKEN to exercise the endpoint.\n");
+    console.log("\nLive checks skipped — set GALY_ENDPOINT (or GALY_MCP_URL) and GALY_TOKEN to exercise the endpoint.");
+    console.log("The workflow vocabulary is therefore only HALF checked: the repository agrees with");
+    console.log("itself, but nothing compared it to the catalogue the instance actually serves.\n");
     return summarize();
   }
 

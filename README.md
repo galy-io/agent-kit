@@ -77,12 +77,12 @@ nothing to do with Galy. A repository that has never been observed is offered th
 repository already connected is challenged at most once every twelve hours.
 
 Nothing has to be typed as a command. **A plain sentence starts the first pass** — "démarre
-l'onboarding Galy", "start the Galy onboarding", "où en sont nos pratiques ?" — and the `onboarding`
-skill takes it from there.
+l'onboarding Galy", "start the Galy onboarding", "où en sont nos pratiques ?", "fais le point" — and
+the `audit` skill takes it from there.
 
 ## The first pass is a conversation, not a script
 
-`onboarding` orchestrates from your own session: it opens the pass, runs the probes the instance can
+`audit` orchestrates from your own session: it opens the pass, runs the probes the instance can
 run alone, then **asks you what it may look at** — the repository and its history, the forge, the
 infrastructure, production in read. Each authorised surface immediately puts a **subject agent** on
 it, and they work in parallel while the conversation continues.
@@ -123,15 +123,49 @@ how to tell them apart.
 No workflow is edited, no command renamed, no `.mcp.json` touched, and **the pull request is never
 merged**. Your review is the point.
 
+## What the skills do on their own, and what they stop to ask
+
+Every preference answers one question: when a skill reaches a step it could take unattended —
+committing a reviewed change, opening the pull request, moving to the next phase — does it take it,
+or does it stop and ask you?
+
+Two layers decide, and the top one wins: your **administrator's policy** for the whole workspace —
+`allow`, `deny`, or `user_choice`, set per skill and per option — and, under `user_choice`, **your
+own preference**. Both live on your Galy account, so they follow you from one checkout to the next;
+a local `.galy/workflow-defaults.json` mirrors the user layer for headless runs, and is never
+committed.
+
+Ask "quels réglages Galy sont actifs ?" and the `workflows` skill shows the table, says who decided
+each line, and links the page on your account. `ask` is always a real answer, never a fallback: a
+developer who wants the question every time has decided to stay in the loop.
+
+None of it makes the kit merge or deploy. It **stops at "PR ready"** — a documented boundary, not a
+gap — and the merge stays with the process you already have.
+
+### Nothing leaves your instance
+
+No verb in this kit sends anything out of your tenant. **Support is blind by construction**, and
+nothing in the contract can change that.
+
+The first pass finishes by **writing** a retrospective — what worked, what was awkward, the
+questions it could not answer, your suggestions — about the onboarding process itself. It is
+written to your own instance and nothing is asked, because writing in your own workspace asks
+nobody's permission.
+
+Whether that instance forwards anything to Galy is an **instance setting your administrator holds**,
+disabled by default. It is not a question put to the developer at the terminal, and no skill
+pretends otherwise.
+
 ## What you get
 
-Fourteen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
+Fifteen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
 
 | Skill | What it does |
 |---|---|
-| `onboarding` | The first pass: audit how you already track work, open the adapting pull request, observe the twenty criteria, record what was seen. |
+| `audit` | Where your practices stand, first pass and every one after: audit how you already track work, open the adapting pull request, observe the twenty criteria, record what was seen. Applies nothing. |
 | `adapt` | Turn the kit's generic skills into skills bound to your environment, as a pull request. Never overwrites, never merges. |
 | `connect` | Wire a repository to your workspace, or diagnose a connection that answers nothing. |
+| `workflows` | See and change what the skills may do on your behalf — and what your administrator decided for everyone. |
 | `bug-fix` | A bug from report to pull request: reproduce first, fix the cause, prove it on the user's own path, leave a follow-up check. |
 | `strategy` | Explore your objectives tree (read-only) and map work to the objective it serves. |
 | `feature-brief` | Frame a business need into a brief — problem, vision, user stories, success criteria. |
@@ -171,8 +205,8 @@ galy/
   .claude-plugin/plugin.json      # plugin manifest
   hooks/hooks.json                # SessionStart — what makes it start on its own
   hooks/session-start.mjs         # offline: decides whether Galy has anything to say here
-  agents/<name>.md                # the 5 subject agents the first pass dispatches
-  skills/<name>/SKILL.md          # the 12 skills
+  agents/<name>.md                # the 6 subject agents the first pass dispatches
+  skills/<name>/SKILL.md          # the 15 skills
   instructions/                   # shared conventions the skills reference
   contract/pm-v1.json             # the project-management tool + REST contract
   contract/conformance/           # the outward-only conformance suite (MCP + REST)

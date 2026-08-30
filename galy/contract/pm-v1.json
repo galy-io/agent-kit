@@ -1,7 +1,19 @@
 {
   "contract": "galy-pm-v1",
-  "description": "The project-management verbs the Galy MCP server exposes to your Claude Code. Strictly outward: your assistant reads strategy, briefs and specs and writes back statuses, plans and follow-ups. No verb accepts source code, a diff, or file content — Galy never sees your repository.",
+  "description": "The project-management verbs the Galy MCP server exposes to your Claude Code. Strictly outward: your assistant reads strategy, briefs and specs and writes back statuses, plans and follow-ups. No verb accepts source code, a diff, or file content — Galy never sees your repository. And no verb sends anything out of your tenant: everything written here stays in your own instance. Support is blind by construction — nothing in this contract can change that, and no skill asks a user to.",
   "transport": { "type": "http", "url": "https://<your-workspace>.galy.cloud/mcp (every workspace answers on its own host; registered per project by galy-setup, never hardcoded)", "auth": "Bearer token in the Authorization header (posted by galy-setup); token is looked up by its SHA-256, so it never travels or is stored in clear on the server" },
+  "workflow_options": {
+    "description": "The complete vocabulary of workflow preferences this kit knows: which skill owns which option, and the canonical values each accepts. This is the single authority - the enums on workflow_default_set, workflow_default_unset and workflow_policy_resolve are checked against it, and so is every option a skill cites. An option that is not here does not exist.",
+    "options": {
+      "feature-implement": {
+        "merge_mode": ["auto-merge", "stop-before-merge", "ask"]
+      },
+      "ship": {
+        "auto_ship": ["confident", "always-manual", "ask"]
+      }
+    }
+  },
+
   "rest_api": {
     "description": "The REST surface the `galy` CLI uses (gooal PmContentController), same Bearer auth. Read side only + the markdown body round-trip. Content bodies are raw markdown whose sections are delimited by <!-- @field <name> --> and composed/parsed server-side.",
     "base": "https://<your-workspace>.galy.cloud",
@@ -282,6 +294,17 @@
     },
 
     {
+      "name": "workflow_policy_resolve",
+      "kind": "read",
+      "description": "Collapse the workspace policy and the user's preference for one skill+option into a single answer, and say who decided. The administrator's policy (allow | deny | user_choice) outranks the user's value; a skill must call this before offering any choice, or it offers a control the user may not have. An unreadable policy is never permission.",
+      "params": [
+        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash.", "enum": ["feature-implement", "ship"] },
+        { "name": "option", "type": "string", "required": true, "description": "Option name. Must belong to the skill named above - see workflow_options.", "enum": ["auto_ship", "merge_mode"] }
+      ],
+      "returns": { "success": "bool", "effective": "allow | deny | ask", "decided_by": "admin | user | default", "admin_policy": "allow | deny | user_choice | null", "user_value": "string | null", "settings_url": "string (the page on the user's Galy account where both layers are visible)" }
+    },
+
+    {
       "name": "workflow_default_get_all",
       "kind": "read",
       "description": "Return every workflow preference stored for the current user, as {skill, option, value}. Skills read this once at the start of a run; empty means use the skill's built-in default.",
@@ -293,9 +316,9 @@
       "kind": "write",
       "description": "Persist (upsert) one workflow preference for the current user. value is the canonical machine string the skill expects (e.g. 'on', 'off', 'ask').",
       "params": [
-        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash, e.g. 'feature-implement'." },
-        { "name": "option", "type": "string", "required": true, "description": "Option key, e.g. 'merge_mode'." },
-        { "name": "value", "type": "string", "required": true, "description": "Canonical value, e.g. 'confident', 'off', 'ask'." }
+        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash.", "enum": ["feature-implement", "ship"] },
+        { "name": "option", "type": "string", "required": true, "description": "Option key. Must belong to the skill named above - see workflow_options.", "enum": ["auto_ship", "merge_mode"] },
+        { "name": "value", "type": "string", "required": true, "description": "Canonical machine value accepted by that option - see workflow_options. Never a localized label.", "enum": ["always-manual", "ask", "auto-merge", "confident", "stop-before-merge"] }
       ],
       "returns": { "success": "bool", "user_id": "int", "skill": "string", "option": "string", "value": "string" }
     },
@@ -304,8 +327,8 @@
       "kind": "write",
       "description": "Remove one workflow preference so the skill falls back to its built-in default.",
       "params": [
-        { "name": "skill", "type": "string", "required": true },
-        { "name": "option", "type": "string", "required": true }
+        { "name": "skill", "type": "string", "required": true, "enum": ["feature-implement", "ship"] },
+        { "name": "option", "type": "string", "required": true, "enum": ["auto_ship", "merge_mode"] }
       ],
       "returns": { "success": "bool", "user_id": "int", "skill": "string", "option": "string" }
     },
@@ -353,9 +376,23 @@
     },
 
     {
+      "name": "onboarding_retro_record",
+      "kind": "write",
+      "description": "Record the retrospective of an onboarding pass - what worked, what rubbed, the open questions, the suggestions - about the PROCESS, not about the team's work. It is written to the client's own tenant and stays there; no policy guards it, because writing in your own workspace asks nobody's permission. The four fields carry process feedback only: never code, file excerpts, paths, host names, command output, secrets, customer or product names, nor any recorded observation. The server redacts as a net and says so; a redaction that fires means something was written that should not have been. STAYS IN YOUR WORKSPACE, like every verb in this contract. Whether the instance forwards anything to Galy is an instance setting the client's administrator holds, disabled by default - no verb here decides it, and no user is asked.",
+      "params": [
+        { "name": "run_id", "type": "int", "required": true, "description": "The maturity run this pass opened." },
+        { "name": "worked_md", "type": "string", "required": false, "description": "What genuinely helped, about the process." },
+        { "name": "friction_md", "type": "string", "required": false, "description": "Where the pass stalled, asked a bad question, or wasted time." },
+        { "name": "questions_md", "type": "string", "required": false, "description": "What the pass could not answer and should have been able to." },
+        { "name": "suggestions_md", "type": "string", "required": false, "description": "What would have made it better, in the user's own words where they gave them." }
+      ],
+      "returns": { "success": "bool", "id": "int", "redacted": "bool" }
+    },
+
+    {
       "name": "retro_suggestion_add",
       "kind": "write",
-      "description": "Post an end-of-run retrospective suggestion (status pending) — a durable learning about how the assistant should work. Targets the plugin's own skills or your CLAUDE.md, never your product code. The summary is the lesson + the rule to encode.",
+      "description": "Post an end-of-run retrospective suggestion (status pending) — a durable learning about how the assistant should work. Targets the plugin's own skills or your CLAUDE.md, never your product code. The summary is the lesson + the rule to encode. STAYS IN YOUR WORKSPACE, like every verb here. Pick between the two retrospective verbs by SUBJECT, not by destination: a learning about YOUR work belongs here; feedback about the ONBOARDING PROCESS belongs to onboarding_retro_record. Neither leaves your tenant.",
       "params": [
         { "name": "source", "type": "string", "required": true, "description": "Originating skill, e.g. feature_implement | ship | feature_followup" },
         { "name": "target_kind", "type": "string", "required": true, "description": "instruction | skill | command | doc" },

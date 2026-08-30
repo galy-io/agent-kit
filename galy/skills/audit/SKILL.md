@@ -1,9 +1,9 @@
 ---
-name: onboarding
-description: Start the Galy onboarding — the first pass over a repository, run as a conversation. Fires on a plain sentence such as "démarre l'onboarding Galy", "Claude démarre le onboarding chez Galy", "commence la prise en main", "start the Galy onboarding", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. It audits how the team already tracks its work, opens a pull request adding a CLAUDE.md section and skills bound to their own environment, then puts one agent on each subject and records only what was actually seen. It never touches an existing process, and it never merges what it opens.
+name: audit
+description: Audit this team's engineering practices against the twenty maturity criteria, as a conversation. The same skill runs the first pass and every one after it. Fires on a plain sentence such as "démarre l'onboarding Galy", "Claude démarre le onboarding chez Galy", "commence la prise en main", "fais le point", "start the Galy onboarding", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. It audits how the team already tracks its work, opens a pull request adding a CLAUDE.md section and skills bound to their own environment, then puts one agent on each subject and records only what was actually seen. It observes and proposes; it applies nothing, merges nothing, and triggers nothing.
 ---
 
-# onboarding — the first pass, run as a conversation
+# audit — observe the practices, trigger nothing
 
 This is the moment that decides whether the practice panel is worth anything. A grid filled in by
 hand is an opinion; a grid filled in by what you actually saw is a dated fact.
@@ -12,6 +12,34 @@ hand is an opinion; a grid filled in by what you actually saw is a dated fact.
 state is "not verifiable" with its reason — a perfectly healthy result, not a failure.
 
 The twenty criteria are not a list to read out. They are the steps of this pass.
+
+## Why this skill is called `audit`, and what that costs you
+
+The name is what lets you open with *"je ne déclenche rien"* — the sentence that makes a wary team,
+and a warier IT department, agree to let an agent look at all. **That sentence is only true because
+this skill applies nothing.** It observes, it records what it observed, and it proposes; the only
+thing it ever puts in front of a team is a pull request, which changes nothing until someone
+merges it.
+
+So the word and the behaviour hold each other up. **If you ever make this skill write, commit, run
+a migration, or trigger any pipeline, the name becomes a lie** — and the trust it bought is spent
+retroactively, on every team that already said yes. Add capability elsewhere: a new skill with an
+honest name. Never here.
+
+## One skill, every pass
+
+There is no separate skill for "the first time". The product already models it: a run carries a
+`kind`, and observations expire.
+
+- **Nothing ever observed** (`maturity_challenge` returns `observed: 0`) → `kind: "onboarding"`.
+  This is the first pass, and you say so.
+- **A user asked for it** → `kind: "manual"`.
+- **Something has gone stale** — `to_recheck` is not zero, and you are refreshing it →
+  `kind: "scheduled"`.
+
+The procedure below does not change between them. What changes is where you start: on a repeat
+pass, `maturity_challenge` tells you what is stale and what was never probed, and **that** is where
+the work is. Re-observing fresh green buys nothing.
 
 ## You are the orchestrator, and you stay in the main session
 
@@ -44,12 +72,14 @@ is grey is normal. A first pass that came out all green would be suspicious.
 
 ### 1. Open the pass, and stand on measured ground
 
-- `mcp__galy__maturity_start_run` with `kind: "onboarding"`. **Keep the `run_id`** — every agent
-  needs it, and every observation belongs to it.
+- `mcp__galy__maturity_challenge` first, to find out which pass this is — see *One skill, every
+  pass* above.
+- `mcp__galy__maturity_start_run` with the `kind` that answer implies. **Keep the `run_id`** —
+  every agent needs it, and every observation belongs to it.
 - `mcp__galy__maturity_run_probes` — what the instance can see by itself, it sees by itself. Do
   not spend anyone's judgement on what a probe already answered.
-- `mcp__galy__maturity_challenge` — the level, what is already observed, what has never been
-  looked at, what is at risk. This tells you where the pass actually has work to do.
+- `mcp__galy__maturity_challenge` again after the probes — the level, what is already observed,
+  what has never been looked at, what is at risk. This tells you where the pass has work to do.
 
 ### 2. Ask what you may look at — and mean it
 
@@ -148,6 +178,41 @@ Four things, in this order:
 2. **What is at risk** — a power whose guard nobody saw. First, before the good news.
 3. **The open questions**, ordered by what they unlock, phrased for a human.
 4. **A single next step**, with its duration and its risk. Not a shopping list: one step.
+
+## Then, and only then, write the retrospective
+
+**After** the report is delivered — never before, and never as a condition of it — write down what
+this pass was like: what worked, what rubbed, what it could not answer, and what the user suggested.
+
+`mcp__galy__onboarding_retro_record(run_id, worked_md, friction_md, questions_md, suggestions_md)`.
+
+**Nothing is asked, because nothing is theirs to decide.** It is written to their own instance and
+stays there, like everything else this contract writes. Writing in your own workspace asks nobody's
+permission — and whether that instance forwards anything to Galy is a setting their administrator
+holds, not a question for the person in front of you.
+
+Each field carries **only** what its name says, about **the process**:
+
+- `worked_md` — what genuinely helped: a question that unlocked something, an agent that found
+  what nobody expected.
+- `friction_md` — where the pass stalled, asked a bad question, or wasted the user's time.
+- `questions_md` — what the pass could not answer and should have been able to.
+- `suggestions_md` — what would have made it better, in the user's own words where they gave them.
+
+Keep it about the process. Never code, file excerpts, paths, host names, command output, secrets,
+customer names, nor the observations you recorded — those belong to the workspace and stay in it.
+
+### Say one line, and do not turn it into a choice
+
+The user has no decision to make here. **Do not ask, do not offer, do not hint at a preference** —
+implying a control they do not have is worse than saying nothing at all. One line, then stop:
+
+> Rétrospective de cette prise en main écrite dans votre instance : qu'elle remonte ou non à Galy
+> est un réglage d'instance que votre administrateur tient, désactivé par défaut.
+
+That is the whole of it. No paragraph, no link to a settings page they cannot change, no "would you
+like to…". If they ask about it, answer plainly: the setting lives in the instance configuration,
+their administrator decides, and by default nothing leaves.
 
 ## The tone
 

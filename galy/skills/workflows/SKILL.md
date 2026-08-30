@@ -1,0 +1,76 @@
+---
+name: workflows
+description: See and change what Galy's skills do on their own and what they stop to ask you — commit and open the pull request unattended, or pause for your check first. Fires on "quels réglages Galy sont actifs ?", "arrête de committer tout seul", "demande-moi avant d'ouvrir la PR", "galy settings". Shows what your administrator decided for the whole workspace and what is left to you, and points at the page on your Galy account.
+---
+
+# workflows — act, or stop and ask
+
+Every preference here answers the same question: **when a skill reaches a step it could take on its
+own, does it take it, or does it stop and ask you?** Committing a reviewed change, opening the pull
+request, moving to the next phase — each is a point where a developer wants a different answer on a
+Friday afternoon than on a first day in a new repository.
+
+They are stored on your Galy account, not in this repository, so they follow you from one checkout
+to the next.
+
+## Two layers, and the top one wins
+
+- **Your administrator's policy**, set for the whole workspace, per skill and per option:
+  `allow`, `deny`, or `user_choice`.
+- **Your own preference**, which only decides when the policy says `user_choice`.
+
+`mcp__galy__workflow_policy_resolve(skill, option)` returns both plus the answer:
+
+```
+{ effective: "allow" | "deny" | "ask", decided_by: "admin" | "user" | "default",
+  admin_policy, user_value, settings_url }
+```
+
+**Read `decided_by` before you say anything.** When it is `admin`, the choice is not the user's to
+make: say so in one line, give the `settings_url`, and do not offer a question whose answer would
+change nothing. Offering it anyway is worse than saying no — it implies a control that is not
+there, and the next session discovers the lie.
+
+## Showing the current state
+
+Read `mcp__galy__workflow_default_get_all` for the user's side and resolve each known option for
+the policy side. Render one short table — option, effective value, who decided — and end with the
+`settings_url`. No option is worth more than one line.
+
+| Skill | Option | What it decides |
+|---|---|---|
+| `ship` | `auto_ship` | whether a safe, high-confidence change is committed and its pull request opened without stopping for you, or whether the human gate fires every time |
+| `feature-implement` | `merge_mode` | whether the loop hands the ready pull request straight to **your** merge process, or stops at "PR ready" for your review |
+
+**Neither of these makes the kit merge or deploy anything.** The kit stops at "PR ready" — that is a
+documented boundary, not a gap — and `merge_mode` only decides whether the loop pauses before
+handing the pull request over to the process you already have. An option that merged for you would
+be a lie about what this kit does.
+
+## Changing one
+
+`mcp__galy__workflow_default_set(skill, option, value)`, then rewrite the local mirror
+`.galy/workflow-defaults.json` so an offline or headless run sees the same thing. **Persist the
+canonical machine value, never the label you displayed** — labels get reworded, and a stored label
+silently stops matching.
+
+If the policy for that option is `allow` or `deny`, setting a user value changes nothing: say that
+instead of writing a preference that will never be read.
+
+## The value that always exists
+
+Every option accepts `ask`, and it is not a fallback — it is a real answer. A developer who wants
+the question every time is not undecided; they have decided to stay in the loop. Never nudge them
+off it, and never treat a stored `ask` as an absent preference.
+
+An option nobody has ever set is a different thing: ask both questions in one turn — what to do
+this run, and what to do from now on — and persist only the second. The pattern is in
+`${CLAUDE_PLUGIN_ROOT}/instructions/workflow-defaults.md`.
+
+## The page on their account
+
+Everything here is also visible and editable at the `settings_url` the resolve verb returns, which
+is also where an administrator sets the workspace policy. Say it once, at the end, as a link — not
+as a paragraph. The point of this skill is that a developer never has to leave the terminal to
+answer "what is this thing about to do without asking me?", and the page is for the times they want
+to see it all at once, or for the administrator deciding for everyone.
