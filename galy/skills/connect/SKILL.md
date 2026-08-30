@@ -43,7 +43,7 @@ Read the answer against these four, which cover nearly every case:
 ## The command
 
 ```
-npx -y github:galy-io/claude-kit <token> --endpoint https://<their-workspace>.galy.cloud
+npx -y github:galy-io/agent-kit <token> --endpoint https://<their-workspace>.galy.cloud
 ```
 
 **Not `npx galy-setup`.** That package is published on no registry: npm answers `E404 Not Found`, and
