@@ -237,21 +237,34 @@ environment beside their existing ones. Nothing existing is touched, and it neve
 Say the link as soon as it exists, in one line, and carry on with the criteria. It is the first
 thing of the pass they can actually use.
 
-## The other thing they can use: the workstation
+## When a criterion is not green: the catalogue carries its own method
 
-When `environment_bootstraps` comes back anything but green — no pool of isolated working copies,
-no launcher that opens one, or a launcher that never updates itself — offer **`galy:poste-de-travail`**
-once, at the close, in one line.
+**There is no skill per criterion, and there never will be.** Twenty criteria would be twenty
+entries in a menu nobody reads, for a product whose whole promise is not to spend the reader's
+attention. The procedure for putting a criterion in place lives with the criterion:
+`mcp__galy__maturity_remediation_get(criterion_id)` returns it.
 
-**Offer it. Do not run it.** It is the one skill of this pass that writes on their machine — folders
-beside the repository, a shortcut on the desktop — and that half has no diff to read, so it asks
-its own question before doing anything. Starting it because the criterion was red would be exactly
-the failure this pass exists to avoid.
+Three rules, and they are the same for all twenty:
 
-One line is enough, because the skill explains itself:
+- **Fetch it only for a criterion you are about to work on.** It is long. Loading it for a
+  criterion that is green, or that the user has not asked to fix, spends context on nothing.
+- **Offer, do not start.** A red criterion is not consent. The offer is **one sentence: what you
+  saw, then the question** — and the question is a real one, not a heading over work you have
+  already begun. The user answers, and only then do you fetch the procedure.
 
-> `environment_bootstraps` n'est pas au vert : <ce qui manque, en cinq mots>. Je peux mettre en
-> place la réserve de copies isolées et l'icône qui les ouvre — dites-le et je le fais.
+  > Pas de copies de travail isolées ici, et pas de lanceur qui en ouvre une. Je peux vous en
+  > mettre un en place sur ce projet — vous voulez ?
+
+  Name what is actually missing, in the words a developer uses. Never the criterion's own name
+  said back to them, never a level, never a score. If they say no, record the criterion on what is
+  true and move on: no second attempt later in the same pass.
+- **Follow it, and let it do its own asking.** A procedure that writes on their machine carries
+  its own question — do not paraphrase it, do not pre-approve it, and do not skip it because the
+  user already said yes to the audit.
+
+When the verb answers `has_procedure: false`, that criterion has no written method yet. Say so
+plainly. **Never write one from memory**: a method invented on a subject that touches production
+is worse than no method, because it looks like one.
 
 ## Closing
 
