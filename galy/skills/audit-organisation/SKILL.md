@@ -1,9 +1,9 @@
 ---
-name: audit
+name: audit-organisation
 description: Audit this team's engineering practices against the twenty maturity criteria, as a conversation. The same skill runs the first pass and every one after it. Fires on a plain sentence such as "démarre l'onboarding Galy", "Claude démarre le onboarding chez Galy", "commence la prise en main", "fais le point", "start the Galy onboarding", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. It audits how the team already tracks its work, opens a pull request adding a CLAUDE.md section and skills bound to their own environment, then puts one agent on each subject and records only what was actually seen. It observes and proposes; it applies nothing, merges nothing, and triggers nothing.
 ---
 
-# audit — observe the practices, trigger nothing
+# audit-organisation — observe the practices, trigger nothing
 
 This is the moment that decides whether the practice panel is worth anything. A grid filled in by
 hand is an opinion; a grid filled in by what you actually saw is a dated fact.
@@ -70,7 +70,20 @@ is grey is normal. A first pass that came out all green would be suspicious.
 
 ## The order
 
-### 1. Open the pass, and stand on measured ground
+### 1. Say which workspace this is going to be written into
+
+**Before anything else, one line naming it.** `mcp__galy__whoami` answers who the token belongs to
+and which workspace it opens; say the workspace's name out loud.
+
+It is not a formality. A developer can reach several — their own, a customer demonstration, a
+rehearsal instance — and the tools give no hint of which one is answering. **An audit that records
+into the wrong workspace is worse than one that fails**: failing is visible, whereas a credible and
+wrong grid appears in somebody else's account and nobody looks for it.
+
+The pass depends on that connection anyway: with none, `maturity_challenge` answers nothing and
+there is no pass. Saying it costs one line and turns an implicit dependency into a stated fact.
+
+### 2. Open the pass, and stand on measured ground
 
 - `mcp__galy__maturity_challenge` first, to find out which pass this is — see *One skill, every
   pass* above.
@@ -81,7 +94,7 @@ is grey is normal. A first pass that came out all green would be suspicious.
 - `mcp__galy__maturity_challenge` again after the probes — the level, what is already observed,
   what has never been looked at, what is at risk. This tells you where the pass has work to do.
 
-### 2. Ask what you may look at — and mean it
+### 3. Ask what you may look at — and mean it
 
 One `AskUserQuestion`, and it is the load-bearing one, because **the answer decides which agents
 run**. Phrase it for a human, not for an engineer.
@@ -118,7 +131,7 @@ Give each one, in its prompt: the `run_id`, the criteria it owns, the permission
 plain words, and the one line of context you already have about the stack. Nothing else — they
 carry their own method.
 
-### 3. Ask the framing questions while they work
+### 4. Ask the framing questions while they work
 
 A second `AskUserQuestion`, sent **after** the agents are launched, never before — waiting for an
 answer before dispatching wastes the only parallelism this pass has.
@@ -140,7 +153,7 @@ department, lead with the fact that levels 1 and 2 grant **no write right at all
 Add the questions `maturity_challenge` returned in `open_questions` if any are worth a human's
 time; they come ordered by what they unlock, and one that unlocks four criteria goes first.
 
-### 4. Hand back something usable, before the report
+### 5. Hand back something usable, before the report
 
 The moment `galy:project-management` returns its binding, run **`galy:adapt`**. It opens a branch
 and a pull request carrying two things and nothing else: an added, delimited section in the root
@@ -153,7 +166,7 @@ merges what it opens.
 
 Say the link out loud as soon as it exists. The rest of the pass keeps running behind it.
 
-### 5. Assemble — and check the arithmetic
+### 6. Assemble — and check the arithmetic
 
 When the agents come back, call `mcp__galy__maturity_challenge` again and **report from what it
 returns**, not from what the agents told you. The server is the record; an agent's summary is a
