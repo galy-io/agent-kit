@@ -21,6 +21,22 @@
           "confident",
           "always-manual",
           "ask"
+        ],
+        "release_trigger": [
+          "merge-ships",
+          "separate-call",
+          "ask"
+        ],
+        "release_hold": [
+          "hold-for-a-human",
+          "go-when-green",
+          "ask"
+        ],
+        "rollback_mode": [
+          "revert-and-reship",
+          "redeploy-previous",
+          "no-way-back",
+          "ask"
         ]
       }
     }
@@ -982,6 +998,16 @@
       }
     },
     {
+      "name": "workflow_catalog_list",
+      "kind": "read",
+      "description": "List the workflow options THIS instance actually knows: skill, option, accepted values, and the value that applies when nobody has decided. Read it instead of hardcoding option names - an option this instance does not know is a setting nothing will ever honour, and a value it does not accept is one it will refuse to store. It is also what closes the loop on this contract: the vocabulary declared here is compared to the one the instance serves, so a drift on either side is caught instead of being discovered by a user toggling a control that changes nothing.",
+      "params": [],
+      "returns": {
+        "success": "bool",
+        "workflow_options": "[{ skill, option, values: [string], default_when_unset: string }]"
+      }
+    },
+    {
       "name": "workflow_policy_resolve",
       "kind": "read",
       "description": "Collapse the workspace policy and the user's preference for one skill+option into a single answer, and say who decided. The administrator's policy (allow | deny | user_choice) outranks the user's value; a skill must call this before offering any choice, or it offers a control the user may not have. An unreadable policy is never permission.",
@@ -1003,7 +1029,10 @@
           "description": "Option name. Must belong to the skill named above - see workflow_options.",
           "enum": [
             "auto_ship",
-            "merge_mode"
+            "merge_mode",
+            "release_hold",
+            "release_trigger",
+            "rollback_mode"
           ]
         }
       ],
@@ -1049,19 +1078,29 @@
           "description": "Option key. Must belong to the skill named above - see workflow_options.",
           "enum": [
             "auto_ship",
-            "merge_mode"
+            "merge_mode",
+            "release_hold",
+            "release_trigger",
+            "rollback_mode"
           ]
         },
         {
           "name": "value",
           "type": "string",
           "required": true,
-          "description": "Canonical machine value accepted by that option - see workflow_options. Never a localized label.",
+          "description": "Canonical machine value accepted by that option - see workflow_options. Never a localized label. The instance refuses a value it does not accept for an option it knows, so read workflow_catalog_list rather than guess.",
           "enum": [
             "always-manual",
             "ask",
             "auto-merge",
             "confident",
+            "go-when-green",
+            "hold-for-a-human",
+            "merge-ships",
+            "no-way-back",
+            "redeploy-previous",
+            "revert-and-reship",
+            "separate-call",
             "stop-before-merge"
           ]
         }
@@ -1094,7 +1133,10 @@
           "required": true,
           "enum": [
             "auto_ship",
-            "merge_mode"
+            "merge_mode",
+            "release_hold",
+            "release_trigger",
+            "rollback_mode"
           ]
         }
       ],

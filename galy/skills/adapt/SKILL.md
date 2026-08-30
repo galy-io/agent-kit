@@ -1,13 +1,15 @@
 ---
 name: adapt
-description: Turn the kit's generic skills into skills bound to this team's own environment, and propose them as a pull request together with an added CLAUDE.md section. Runs right after the project-management audit of the first pass, or on its own with "adapte les skills Galy à notre environnement". It opens a branch and a pull request; it never merges, never rewrites an existing skill, and never changes an existing process.
+description: Turn the kit's generic skills into skills bound to this team's own environment — including a merge skill and a release skill written against the pipeline the delivery pass actually read — and propose them as a pull request together with an added CLAUDE.md section. Runs right after the project-management and delivery audits of the first pass, or on its own with "adapte les skills Galy à notre environnement". It opens a branch and a pull request; it never merges, never deploys, never rewrites an existing skill, and never changes an existing process.
 ---
 
 # adapt — make the kit fit this repository, as a pull request
 
 The kit's skills are written against Galy's verbs and nobody else's. This step rewrites them
 against **what this team actually has**, and hands the result over as a pull request: a branch,
-an added section in the root instruction file, and adapted skills beside their existing ones.
+an added section in the root instruction file, and adapted skills beside their existing ones —
+plus, where the delivery pass actually read their chain, a merge skill and a release skill that
+describe the way they already ship.
 
 **Nothing existing changes.** Not one command, not one workflow, not one convention. If the only
 way to use Galy were to move their work items, they would keep the work items and drop Galy.
@@ -33,6 +35,16 @@ tickets and strategy; what the id shapes are; which commands already exist. If i
 produced in this session, run that agent first. Adapting without it means guessing at their
 method, and a wrong guess lands in a pull request with your name on it.
 
+And, for the delivery half only, the **named facts** from `galy:delivery`: the chain file and
+what triggers it, whether a push to the default branch deploys, whether that branch is
+protected, whether anything stops two releases at once, where going back is written down, how a
+change is actually merged, and the commands that already exist.
+
+**Without those facts you write no delivery skill at all.** Not a cautious one, not a generic
+one — none. Run the agent, or leave that half out and say in one line that you did. The whole
+point of the delivery half is to speak about *their* chain; a skill that speaks about a chain
+nobody read is the one artefact that ends the relationship, and it looks exactly like a good one.
+
 ## The one rule that outranks the others
 
 **Never take a name that is already taken.** Check before writing anything:
@@ -44,6 +56,10 @@ ls .claude/skills .claude/commands .agents/skills 2>/dev/null
 The kit ships `feature-brief`, `feature-spec`, `feature-implement`, `feature-followup`, `ship`,
 `strategy`, `bug-fix`. Teams that already work this way have skills with **exactly those names** —
 it is the natural vocabulary, so the collision is the common case, not the edge case.
+
+The two you write for delivery, `merge` and `release`, collide even more often: a team that
+deploys has almost always named something `deploy`, `release` or `ship` already, and **theirs
+is the one that works**. Read `delivery_commands` before you choose a name, not after.
 
 On a collision, you have two honest options and you pick per skill, not globally:
 
@@ -79,6 +95,15 @@ Appended, inside a delimited block, never a rewrite:
 
 **Le contrôle d'aiguillage se déclenche au premier appel qui écrit un fichier**, pas au début
 de l'exploration.
+
+### Comment on livre ici
+
+<le fichier de chaîne et son déclencheur, cités tels qu'ils sont écrits dans le fichier>
+<fusionner suffit-il à livrer, ou faut-il un appel distinct — et lequel>
+<le retour arrière, ou le trou en toutes lettres : « je n'ai trouvé aucun retour arrière écrit »>
+
+- <fusionner un changement prêt> → `<la skill de fusion>`
+- <mettre en production> → `<la skill de mise en production>`
 <!-- galy:end -->
 ```
 
@@ -116,11 +141,18 @@ names:
 > l'exploration. Ni l'exploration, ni une approbation préalable, ni une séquence d'étapes dictée
 > par l'utilisateur, ni la délégation du code à un sous-agent n'en exemptent le tour.
 
+5. **How a change reaches production here**, in three lines and a two-row routing table — the
+   chain file and its trigger quoted from the file, whether merging is enough to ship, and how
+   going back is done. **Every line either carries a fact `galy:delivery` read, or says out loud
+   that it did not.** *« Votre chaîne se déclenche sur un push vers `main`, et je n'ai trouvé
+   aucun retour arrière écrit »* is a good line. *« Suivez votre procédure de retour arrière »*
+   is the failure: it sounds like doctrine and it is a guess.
+
 **A rule without a trigger is a preference.** Without that last line, every session finds an honest
 reason to have already started: it was only exploring, the user had approved, a subagent was doing
 the writing. Each of those is true, and each of them is how the rule dies.
 
-Keep the whole thing to what a session reads in full every time. Four short blocks, not an essay.
+Keep the whole thing to what a session reads in full every time. Five short blocks, not an essay.
 
 If the file does not exist, propose one — and then it is a doctrine, not a Galy section: cover
 the stack, how to build and test, the conventions read from their history, and above all the
@@ -140,7 +172,80 @@ generic version with:
 Adapt only what the binding says is useful. Four adapted skills that fit are worth more than
 twelve that need arguing about.
 
-### 3. Nothing else
+### 3. The two delivery skills, written against their chain
+
+Same rules as above, same collision handling, same directory. What changes is where the words
+come from: **not the kit's generic version, but the named facts `galy:delivery` came back with.**
+There is no generic merge skill to adapt, because there is no generic way to merge.
+
+**Two skills, not one, and the split is the whole lesson.** Green Acres runs this on a hundred-odd
+commands: their merge command stops *after* the merge, and shipping is a separate call that
+deposits a request in a queue. Take that shape — never their commands, never their queue, never
+their names, which belong to them:
+
+- **the merge skill ends at the merge**, and says so in its own first lines. Everything before it
+  — the branch, the pull request, the review — is `ship`'s job and is not repeated here.
+- **the release skill is a separate call.** A step that reaches users is never a side effect of
+  the step before it, even on a chain where merging happens to ship: there, the skill's job is to
+  say that plainly, because the pause the team thinks it has does not exist.
+
+Every sentence in both is anchored on a fact:
+
+| What the skill says | The fact behind it |
+|---|---|
+| the chain file and what starts it | `pipeline_file`, `pipeline_trigger`, quoted, never paraphrased |
+| whether merging ships | `push_to_default_deploys` |
+| what guards the default branch | `default_branch`, `default_branch_protected` |
+| whether two releases can race | `release_lock` |
+| how to go back | `rollback_procedure` |
+| the command that merges | `merge_command` |
+
+**Where the fact came back `non constaté`, write the hole.** In place, in the skill, in the
+words a developer would use, with what it would take to fill it:
+
+> Votre chaîne se déclenche sur un `push` vers `main` (`.github/workflows/deploy.yml`, ligne 12) :
+> fusionner suffit à livrer. **Je n'ai trouvé aucun retour arrière écrit** — ni procédure, ni
+> exécution passée. Tant qu'il n'y en a pas, ne comptez pas sur celui-ci pour vous en proposer un.
+
+That is not a caveat to soften a sentence: it *is* the sentence. A skill that lies about a team's
+chain is read in their first hour, is wrong, and nobody comes back to it — and it does not look
+like a broken thing, it looks like a working one.
+
+Two things that must never appear in what you write: the word **Galy**, or the name of this
+kit's own repository, anywhere in a command; and a command that is not in their repository.
+The skills are theirs and speak only of theirs.
+
+#### What the skills read at run time, rather than bake in
+
+Three of these answers are settings, not facts, and a setting changes without a pull request:
+`ship`/`release_trigger`, `ship`/`release_hold`, `ship`/`rollback_mode`. Write the generated
+skills to **resolve them at run time** — `mcp__galy__workflow_policy_resolve` — instead of
+freezing today's answer in their text. A team that changes its mind on the settings page and
+sees nothing change has been given a control that is not one.
+
+**Read the option names and their values from the instance, never from memory:**
+`mcp__galy__workflow_catalog_list` says what *this* instance actually knows. An option it does
+not know is a setting nothing will ever honour, and a value it does not accept is one it will
+refuse to store — so a name typed from memory produces a page that toggles nothing. That has
+already happened twice, in both directions, in one hour.
+
+#### Propose the starting value, and ask once
+
+The observation suggests it; the team decides it. A team whose merge already ships has not made
+the same choice as a team that deploys by hand, and a default that trod on that would be an
+invention in the one place inventions cost most.
+
+- `push_to_default_deploys` read as yes → propose the value meaning *merging ships it*.
+- a deploy job reachable only by hand → propose the one meaning *a separate step ships it*.
+- `rollback_procedure` came back `non constaté` → propose the value that says **there is no way
+  back yet**. Recording the hole is the point; it is what stops the next session inventing one.
+
+Ask once, for the three together, in the user's language, and say where the observation came
+from. On a yes, write them with `mcp__galy__workflow_default_set` — canonical values, exactly as
+the catalogue spells them, never a label you displayed. On a no, or on silence, write nothing and
+say in one line what stayed unset: an unanswered question is not an answer.
+
+### 4. Nothing else
 
 No CI change. No renamed branch. No `.mcp.json` edit — the connection is registered outside the
 repository, on purpose. No deletion.
@@ -163,9 +268,14 @@ git commit                             # message dans leur langue et leur style
 gh pr create --base <leur branche par défaut>
 ```
 
-The pull-request body says four things and stops: what this adds, what it deliberately does not
-touch, which collisions were found and how each was handled, and what to do to try it — one
-sentence, one command.
+The pull-request body says five things and stops: what this adds, what it deliberately does not
+touch, which collisions were found and how each was handled, **which facts came back
+`non constaté` and therefore appear as holes in the delivery skills**, and what to do to try it
+— one sentence, one command.
+
+The holes go in the body on purpose. A reviewer who finds them there reads them as questions
+addressed to them, which is what they are; a reviewer who discovers them inside a skill three
+weeks later reads them as sloppiness.
 
 **Never merge it.** Not with a flag, not because the checks are green, not because the user said
 "vas-y" about the previous step. Their review is the point: it is the first time their team sees
@@ -173,6 +283,7 @@ what an agent proposes, and the impression it leaves decides everything that fol
 
 ## What you hand back
 
-Three lines: the pull-request link, the collisions and what you did about each, and the single
+Four lines: the pull-request link, the collisions and what you did about each, **what came back
+`non constaté` and is therefore written as a hole rather than as a procedure**, and the single
 next step — usually "open a session in the repository and ask it where the practices stand",
 because that is what the added section now makes possible.

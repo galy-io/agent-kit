@@ -99,6 +99,53 @@ When this criterion is not green, the catalogue carries the method for putting i
 the main session fetches it if the user asks. **Do not fetch it, do not propose it, do not run
 it**: it writes on the machine, and only the main session can ask.
 
+## The named facts the next step quotes
+
+Five verdicts are not what the next step needs. `galy:adapt` writes delivery skills **into this
+team's own repository**, and every sentence in them has to be true of *their* pipeline. A skill
+that says « votre chaîne se déclenche sur X » when it does not is read in their first hour, is
+wrong, and nobody comes back to it. So beside the criteria, return a block of **named facts**.
+
+**A fact is a line you opened and read.** Never one a filename suggested. `deploy.yml` is a file
+name; an `on:` block you read inside it is a fact — and a repository whose `deploy.yml` only runs
+tests has already made that mistake for somebody.
+
+Anything you did not read is **`non constaté`**, in those words, with one clause saying where you
+looked. That is not a hole in your work: it is the most useful thing you hand over, because it is
+what stops the next step from inventing.
+
+- **`pipeline_file`** — the path of the file carrying the chain, spelled exactly. Several files:
+  name them all, and say what each one does.
+- **`pipeline_trigger`** — what starts it, **quoted from the file** rather than paraphrased: the
+  branches under `on: push`, a tag pattern, a manual dispatch, a schedule.
+- **`push_to_default_deploys`** — does reaching the default branch reach production? `oui` only
+  when you read a deploying step, in a job that this trigger actually reaches. Name the job and
+  the step. *The file is called deploy* is not an answer.
+- **`default_branch`** and **`default_branch_protected`** — the branch's real name, and whether a
+  protection rule exists. `gh api repos/{owner}/{repo}/branches/<branch>/protection`: a `404` is
+  an answer — no protection; a `403` is not — it is `non constaté`, and say the token could not
+  read it. You already weighed protection under `quality_gate_blocks`; here it is a fact, not a
+  verdict, because the next step has to write the branch's name in a sentence.
+- **`release_lock`** — anything preventing two releases at once: a `concurrency:` key, a queue, an
+  environment with a single deployer. Give the key and its file, or `non constaté`.
+- **`rollback_procedure`** — where going back is written down, and **what it targets**.
+  `non constaté` is frequent and legitimate, and it is the fact the next step needs most: it is
+  what turns an invented rollback into a written hole.
+- **`merge_command`** — how a change is actually merged here: a merge queue, a button, a command
+  of their own, a `gh pr merge` in a script. Read it in their files or in the merged pull
+  requests; if the history shows only squash merges by a bot, that is the fact.
+- **`delivery_commands`** — what already exists, verbatim, names only:
+
+  ```bash
+  ls .claude/skills .claude/commands .agents/skills 2>/dev/null
+  ```
+
+  The next step needs them so it never takes a name that is already taken.
+
+**Return the block once, at the end, and never as a verdict.** None of it is a criterion: nothing
+here is recorded, nothing here goes through the checkpoint, and none of it is a state. The main
+session hands it to `galy:adapt`, which is the only reason it exists.
+
 ## Recording
 
 **You do not record. You return.** Writing a finding into the client's workspace is the main

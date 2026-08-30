@@ -34,18 +34,28 @@ there, and the next session discovers the lie.
 ## Showing the current state
 
 Read `mcp__galy__workflow_default_get_all` for the user's side and resolve each known option for
-the policy side. Render one short table — option, effective value, who decided — and end with the
-`settings_url`. No option is worth more than one line.
+the policy side. **Take the list of options from `mcp__galy__workflow_catalog_list`**, never from
+the table below: it is what *this* instance knows, and showing a row it does not know would be
+offering a control nothing reads. Render one short table — option, effective value, who decided —
+and end with the `settings_url`. No option is worth more than one line.
 
 | Skill | Option | What it decides |
 |---|---|---|
 | `ship` | `auto_ship` | whether a safe, high-confidence change is committed and its pull request opened without stopping for you, or whether the human gate fires every time |
 | `feature-implement` | `merge_mode` | whether the loop hands the ready pull request straight to **your** merge process, or stops at "PR ready" for your review |
+| `ship` | `release_trigger` | whether merging is already shipping here, or a separate call ships it afterwards |
+| `ship` | `release_hold` | whether a release stops and waits for a person, or goes as soon as the checks are green |
+| `ship` | `rollback_mode` | how going back is done here — including *there is no way back yet*, which is a real answer |
 
-**Neither of these makes the kit merge or deploy anything.** The kit stops at "PR ready" — that is a
+**None of these makes the kit merge or deploy anything.** The kit stops at "PR ready" — that is a
 documented boundary, not a gap — and `merge_mode` only decides whether the loop pauses before
 handing the pull request over to the process you already have. An option that merged for you would
 be a lie about what this kit does.
+
+The last three are the sharpest case of that, so say it when you show them: they **describe your
+pipeline, they do not drive it.** Nothing in the kit reads `release_trigger` and then deploys.
+What reads them is a skill written for your own repository, and what it does with them is
+whatever your own commands do.
 
 ## Changing one
 

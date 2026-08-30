@@ -57,10 +57,19 @@ After every `workflow_default_set`/`unset`, write the same value into `.galy/wor
 
 ## Known options
 
+**This table is a reminder, not the authority.** The instance is:
+`workflow_catalog_list` returns the options *it* knows, their accepted values, and the value that
+applies when nobody has decided. Read it before you write a preference — the option names and the
+catalogue have already drifted apart twice in one hour, in both directions, with nothing failing:
+a page offered a control no skill read, and a skill could have offered a value no page accepts.
+
 | Skill | Option | Values |
 |---|---|---|
 | `feature-implement` | `merge_mode` | `auto-merge`, `stop-before-merge`, `ask` |
 | `ship`              | `auto_ship`  | `confident`, `always-manual`, `ask` |
+| `ship`              | `release_trigger` | `merge-ships`, `separate-call`, `ask` |
+| `ship`              | `release_hold` | `hold-for-a-human`, `go-when-green`, `ask` |
+| `ship`              | `rollback_mode` | `revert-and-reship`, `redeploy-previous`, `no-way-back`, `ask` |
 
 ### `auto_ship` flow
 
@@ -74,3 +83,26 @@ Read by `feature-implement` before the final merge step: `auto-merge` → hand t
 merge process; `stop-before-merge` → stop at "PR ready" for human review. Galy's kit never merges for
 you — the merge is always your CI/process (extension point). This option only decides whether the loop
 pauses for you before it.
+
+### The three release options — they describe YOUR pipeline
+
+The kit never merges and never deploys. These three say what happens on the far side of that
+handoff, so that a skill written for a repository does not have to guess:
+
+- **`release_trigger`** — `merge-ships` when reaching the default branch reaches production;
+  `separate-call` when a distinct step ships it after the merge.
+- **`release_hold`** — `hold-for-a-human` stops before the release and waits; `go-when-green`
+  lets it go once the checks pass. On a chain where merging already ships, there is nothing left
+  to hold: say that rather than pretend the pause exists.
+- **`rollback_mode`** — `revert-and-reship`, `redeploy-previous`, or `no-way-back`.
+
+**`no-way-back` is a real answer and the most useful one to store.** A team without a rollback
+that is forced to pick between two procedures it does not have has just been handed an invention,
+and the skill will recite it on the day it matters.
+
+Two of the three default to `ask`, and that is deliberate: the trigger and the rollback are
+**facts about a pipeline**, not preferences. A silent default would invent them. `release_hold`
+defaults to holding, because doing nothing must never make a release leave.
+
+They are also the three that `adapt` proposes a starting value for, from what `delivery` actually
+read — proposes, then asks. An observation is not consent.
