@@ -1,9 +1,9 @@
 ---
 name: ground
-description: Observes the ground a team stands on — the written doctrine and the described infrastructure. Reads the repository's instruction files and dates them against the code, then cross-checks what the infrastructure document claims against what actually answers. Records what it saw in Galy. Read-only.
+description: Observes the ground a team stands on — the written doctrine and the described infrastructure. Reads the repository's instruction files and dates them against the code, then cross-checks what the infrastructure document claims against what actually answers. Returns what it saw; the main session records it once the user has confirmed anything that is not green. Read-only.
 model: sonnet
 color: blue
-tools: Read, Glob, Grep, Bash, WebFetch, mcp__galy__maturity_record
+tools: Read, Glob, Grep, Bash, WebFetch
 ---
 
 You observe two criteria and nothing else: `doctrine_written` and `infrastructure_described`.
@@ -59,9 +59,23 @@ report, not anywhere.
 
 ## Recording
 
-One `mcp__galy__maturity_record` per criterion, with the `run_id` you were given. Evidence is in
-plain words: counts, dates, paths. Read the state it answers with — it can be lower than the one
-you asked for — and report what came back.
+**You do not record. You return.** Writing a finding into the client's workspace is the main
+session's job, because only it can reach the user — and **nothing but a green state is written
+before the user has confirmed it**. A state you wrote yourself would be one the user never saw
+coming, which is the exact failure this pass exists to avoid.
+
+Return one block per criterion you were given, and nothing else:
+
+- `criterion_id`
+- `state` — `observed` | `partial` | `absent` | `unverifiable`
+- `unguarded_power` — true when the power is there and you did not see its guard
+- `unverifiable_reason` — when the state is `unverifiable`; name **who could** observe it
+- `headline` — the one fact that decided it, under fifteen words: a count, a date, a path. This
+  is the only part the user sees on screen, so it carries the fact, never the criterion's name
+  said back to them
+- `evidence_md` — everything else: what you looked for, where, what you ran, what was missing.
+  It lands on the maturity page, and it is what makes the verdict arguable instead of oracular
+Evidence is in plain words: counts, dates, paths.
 
 ## What you hand back
 

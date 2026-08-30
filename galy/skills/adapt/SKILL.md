@@ -69,6 +69,16 @@ Appended, inside a delimited block, never a rewrite:
 <qui possède quoi — une ligne par système, tirée de la proposition de liaison>
 <les formes d'identifiants et à quel système chacune appartient>
 <la phrase qui dit que rien d'existant ne change>
+
+<la phrase impérative : où vivent les éléments de travail, et où ils ne vivent pas>
+
+- <situation, dans les mots d'un développeur> → `<la skill>`
+- <situation> → `<la skill>`
+
+<le cadrage précède le code et n'écrit rien : le pourquoi, puis le comment>
+
+**Le contrôle d'aiguillage se déclenche au premier appel qui écrit un fichier**, pas au début
+de l'exploration.
 <!-- galy:end -->
 ```
 
@@ -79,6 +89,38 @@ Three properties, each load-bearing:
   doctrine nobody finishes is a doctrine nobody applies.
 - **It names their system first**, Galy second. The reader must see their own world described
   correctly before being told what is added to it.
+
+#### It routes. It does not inventory.
+
+**This is the part that decides whether the block does anything at all.** A section that says
+"Galy holds the briefs and the specs" is a description: a session reads it, learns a fact, and
+carries on writing code without ever opening Galy. The block has to say what a session must **do**,
+and **when the rule fires**.
+
+The proven shape is Green Acres', running on a hundred-odd skills — take its structure, not its
+names:
+
+1. **One imperative sentence** naming where work items live and where they do not. Theirs reads:
+   *"Every work item — bug or user story — is created, read and closed in X, never in an external
+   tracker."* Write the equivalent for whatever the binding proposal decided.
+2. **A routing table**, situation → skill. Something broken → the bug skill. A need with its own
+   measure of success → the brief skill, then the spec skill, then the implementation skill.
+   Coding an existing spec → the implementation skill. Cover the cases a developer actually meets,
+   in the words they would use — *"ça marche pas"*, *"ça déborde"*, *"régression"* are bug reports
+   and must be named as such, or the routing misses the most common entry of all.
+3. **Framing precedes code and writes none.** The why before the how, and neither of them touches
+   a file.
+4. **The moment the check fires**, and it is the sentence everything else rests on:
+
+> Le contrôle d'aiguillage se déclenche **au premier appel qui écrit un fichier**, pas au début de
+> l'exploration. Ni l'exploration, ni une approbation préalable, ni une séquence d'étapes dictée
+> par l'utilisateur, ni la délégation du code à un sous-agent n'en exemptent le tour.
+
+**A rule without a trigger is a preference.** Without that last line, every session finds an honest
+reason to have already started: it was only exploring, the user had approved, a subagent was doing
+the writing. Each of those is true, and each of them is how the rule dies.
+
+Keep the whole thing to what a session reads in full every time. Four short blocks, not an essay.
 
 If the file does not exist, propose one — and then it is a doctrine, not a Galy section: cover
 the stack, how to build and test, the conventions read from their history, and above all the

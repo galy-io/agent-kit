@@ -1,6 +1,6 @@
 ---
 name: audit-organisation
-description: Audit this team's engineering practices against Galy's twenty recommended criteria, one criterion at a time. The same skill runs the first pass and every one after it. Fires on a plain sentence such as "audite mon projet", "démarre l'onboarding Galy", "commence la prise en main", "fais le point", "start the Galy audit", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. For each criterion it says what it is about to check, checks it, and reports what it found. It observes and proposes; it applies nothing, merges nothing, and triggers nothing.
+description: Audit this team's engineering practices against Galy's twenty recommended criteria, one criterion at a time, one line each. The same skill runs the first pass and every one after it. Fires on a plain sentence such as "audite mon projet", "démarre l'onboarding Galy", "commence la prise en main", "fais le point", "start the Galy audit", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. It says what it is about to check, checks it, reports one line, and stops to have anything that is not green confirmed before writing it. It observes and proposes; it applies nothing, merges nothing, and triggers nothing.
 ---
 
 # audit-organisation — observe the practices, trigger nothing
@@ -23,27 +23,46 @@ a migration, or trigger any pipeline, the name becomes a lie** — and the trust
 retroactively, on every team that already said yes. Add capability elsewhere: a new skill with an
 honest name. Never here.
 
+## The budget you are spending, and it is not tokens
+
+**The user's attention.** Twenty criteria is a lot to look at and almost nothing to say. The first
+version of this pass produced about 1 500 words and 150 lines of terminal for a single run: every
+criterion got a paragraph, every paragraph was true, and the whole thing was unreadable. A team
+that is told "we will help you work better with an assistant" and receives a wall of text in
+return has already been shown the opposite.
+
+Three numbers hold you to it:
+
+- **One line per criterion on screen.** State, and the one fact that decided it. Not two lines
+  because this one is interesting.
+- **Under 200 words of terminal for the whole pass**, closing included.
+- **The detail is not lost — it is elsewhere.** Everything you would have written goes into
+  `evidence_md` when you record, where the maturity page displays it in full. The screen carries
+  the verdict; the page carries the argument.
+
 ## The shape of this pass: one criterion at a time
 
 **This is the part that decides whether anyone finishes the audit.** Not a questionnaire, not a
 plan, not a scope negotiation. A loop, and the user sees a result inside the first minute:
 
-> **Je vais auditer <le critère> pour vérifier que <la garde, en mots simples>.**
+> **J'audite <le critère> : <la garde, en mots simples>.**
 > *(you look)*
-> **<ce que tu as trouvé, et l'état enregistré.>**
+> **<état> — <le fait qui a décidé>.**
 
 Then the next one. Every criterion, in order, until they stop you or you run out.
 
-Three things this shape buys, and each of them is a failure mode of the version it replaces:
+Four things this shape buys, and each of them is a failure mode of the version it replaces:
 
 - **No upfront questions.** A permission questionnaire arrives when the user has zero context: the
   words mean nothing to them yet, and it reads as bureaucracy before a single useful sentence. Ask
   nothing until you are blocked, and then ask about **that one thing**, in the middle of the
   criterion that needs it, where the question finally has a meaning.
 - **No batch.** A report that arrives twenty minutes later, all at once, cannot be corrected. A
-  conclusion per criterion lets the user say "non, c'est faux, regarde là" while it still costs
-  nothing to redo.
+  line per criterion lets the user say "non, c'est faux, regarde là" while it still costs nothing
+  to redo.
 - **No plan announcement.** Do not list what you are about to do. Do it.
+- **No paragraph.** See the budget above. If a criterion deserves three sentences, those three
+  sentences belong in `evidence_md`.
 
 ### The order
 
@@ -54,14 +73,56 @@ Three things this shape buys, and each of them is a failure mode of the version 
 3. everything `never_probed`, then everything stale (`to_recheck`).
 4. the rest, worst state first: `absent`, then `partial`.
 
-Re-observing fresh green buys nothing. Skip it and say you skipped it.
+Re-observing fresh green buys nothing. Skip it, and say so in one line for the whole batch — not
+one line per criterion skipped.
 
 ### What "one at a time" does not mean
 
 It does not mean one agent per criterion when several share a source. `galy:delivery` reads ninety
 days of forge history once and answers five criteria from it; splitting that into five agents pays
 the same cost five times. **Group by what you have to go and read, report by criterion.** The user
-sees five conclusions, one after another, whatever you did behind them.
+sees five lines, one after another, whatever you did behind them.
+
+## The checkpoint: nothing but green is written unattended
+
+**A pass that never stops is a pass nobody agreed to.** The user watched twenty verdicts scroll by
+and was asked, at no point, whether any of them was true — and every one of them was written to
+their workspace regardless. That is the same failure as filling the grid behind their back, only
+slower.
+
+So the rule is asymmetric, and deliberately:
+
+- **Green records itself.** `observed` is the state that claims nothing is wrong. Being wrong about
+  it costs a re-check. Record it as you go, one line, no question.
+- **Everything else waits for a yes.** `partial`, `absent`, `unverifiable`, and above all
+  `unguarded_power` are the states that say something about how this team works. Being wrong about
+  one of those, in writing, in their own workspace, is the thing that ends the relationship. Hold
+  it, and ask.
+
+**Ask per group, not per criterion.** Twenty questions is the questionnaire you just removed. When
+a subject agent comes back, you have its whole batch: put the non-green ones together, list them
+in one line each, and ask once with `AskUserQuestion`:
+
+> **Avant d'écrire ces constats dans votre espace :**
+> — <critère> : <état> parce que <fait>
+> — <critère> : <état> parce que <fait>
+>
+> Question : « C'est juste ? »
+> — *Oui, enregistre* (recommandé)
+> — *Non, je corrige* — the user says which and why; you look again at that one, and only that one
+> — *N'enregistre pas ce groupe* — you record nothing for it and say which criteria stayed blank
+
+A group with nothing but green has no checkpoint. Do not manufacture one to look thorough.
+
+**Where `AskUserQuestion` does not exist, ask in plain text and wait.** The checkpoint is the
+guarantee, not the widget: a harness without a question tool gets the same three options written
+out and the same pause before writing. Never fall through to recording because asking was
+inconvenient.
+
+`AskUserQuestion` only works in the main session; a subagent cannot reach the user. So the agents
+observe and report to you, **and you do the recording after the checkpoint** — which is a change
+from how the agents used to work, and the reason their instructions say to return their findings
+rather than write them.
 
 ## When you actually need permission
 
@@ -79,16 +140,14 @@ no action the repository's own doctrine forbids.
 ## The agents
 
 Six subject agents carry the method for their own criteria — `galy:project-management`,
-`galy:ground`, `galy:secrets`, `galy:delivery`, `galy:schema`, `galy:autonomy`. Each records what
-it observed itself, with the `run_id`.
+`galy:ground`, `galy:secrets`, `galy:delivery`, `galy:schema`, `galy:autonomy`.
 
 **`galy:project-management` runs first**, alone, and you wait for it. It answers the one question
 that changes what everything else means: *where does this team's work already live?* A team that
 already tracks its work will not move it, and its binding proposal decides what `galy:adapt` can
 propose later.
 
-You stay in the main session: `AskUserQuestion` only works here, and a subagent cannot reach the
-user. If this harness cannot launch agents, do the work yourself — each agent file is a readable
+If this harness cannot launch agents, do the work yourself — each agent file is a readable
 procedure.
 
 ## Opening the pass
@@ -96,9 +155,9 @@ procedure.
 - `mcp__galy__maturity_challenge` — which pass is this, and where is the work.
 - `mcp__galy__maturity_start_run` with the `kind` that answer implies: `onboarding` when nothing
   was ever observed, `scheduled` when refreshing what went stale, `manual` when a user asked.
-  **Keep the `run_id`** — every agent needs it.
-- `mcp__galy__maturity_run_probes` — what the instance can measure by itself, it measures. Do not
-  spend anyone's judgement on what a probe already answered.
+  **Keep the `run_id`** — every recording needs it.
+- `mcp__galy__maturity_run_probes` with that same `run_id` — what the instance can measure by
+  itself, it measures. Do not spend anyone's judgement on what a probe already answered.
 
 Open with one sentence, in the user's language, naming the workspace the observations go into —
 `mcp__galy__whoami` gives you the name:
@@ -142,26 +201,32 @@ sub-objective, and anything you propose hangs there rather than floating.
 `mcp__galy__strategy_create_objective` takes a `parent_objective_id`, so the sub-objective is one
 call, not two.
 
-**Why this one asks when recording an observation does not.** An observation is the audit's own
-output, written to the audit's own panel. An objective is **their strategy** — the thing the whole
-product exists to hold. Something appearing there that nobody asked for is the same failure as a
-grid filled in behind their back, and it is the more visible of the two.
+**Why this one asks, like the non-green findings do.** An objective is **their strategy** — the
+thing the whole product exists to hold. Something appearing there that nobody asked for is the same
+failure as a grid filled in behind their back, and it is the more visible of the two.
 
 A refusal costs nothing: record the criteria anyway and close without hanging them. Never insist.
 
-## Each conclusion
+## Each line
 
-Two or three lines, and they answer what a human actually wants to know:
+On screen, one line, and it answers what a human actually wants to know:
 
-- **what is true today**, in plain words — not the criterion's name repeated back;
-- **the fact that decided it**: a count, a date, a path. Never a secret value;
-- **the state recorded**, and if it is not green, the one thing that would change it.
+> `<critère>` — **<état>** : <le fait qui a décidé>.
 
-Read the state `mcp__galy__maturity_record` returns rather than the one you asked for: an unguarded
-power is stored lower, and the user must hear what was stored.
+- **the fact that decided it**: a count, a date, a path. Never a secret value, never a paraphrase
+  of the criterion's own name.
+- **the state you recorded**, read back from what `mcp__galy__maturity_record` returned rather than
+  the one you asked for: an unguarded power is stored lower, and the user must hear what was stored.
+- **no advice on the line.** The one next step is chosen once, at the close, by the server. Twenty
+  pieces of advice is not twenty times as useful as one; it is a list nobody acts on.
 
 Pass `unguarded_power: true` whenever the power exists and you did not see its guard. "The agent
-can change the schema and nothing traces what it does" must worry, not reassure.
+can change the schema and nothing traces what it does" must worry, not reassure — and it goes
+through the checkpoint like any other non-green finding.
+
+Everything you did not put on the line goes in `evidence_md`: the paths, the counts, the commands
+you ran, what you looked for and did not find. That is what the maturity page shows when the user
+opens the criterion, and it is what makes the verdict arguable instead of oracular.
 
 ## Handing back the adaptation
 
@@ -175,12 +240,23 @@ thing of the pass they can actually use.
 ## Closing
 
 When the criteria are done, or when the user stops you, call `mcp__galy__maturity_challenge` once
-more and close on **what it returns**, not on what you remember:
+more and close on **what it returns**, not on what you remember. Four lines, and then stop:
 
 1. **The count**, with its full denominator: "6 observés sur 20, dont 9 non vérifiables". Never a
    percentage of what you managed to look at.
 2. **What is at risk**, if anything — first, before the good news.
 3. **One next step**, with its duration and its risk. Not a shopping list: one step.
+4. **The link to the maturity page**, and it is the last line of the pass.
+
+**Give the URL the tool returns. Never build one.** The address of a Galy instance is not
+guessable — every workspace answers on its own host and a dedicated instance lives under the
+client's own name — so a link you assembled yourself lands on a 404 or, worse, on somebody else's
+instance. If no tool gave you a URL, say the page exists and say you do not have its address; that
+is a bug to report, not a gap to paper over.
+
+The link is what makes the four lines above sufficient rather than thin: the argument for every
+one of the twenty verdicts is on that page, with its evidence, its date and its history. You are
+not summarising the audit — you are pointing at it.
 
 Levels 1 and 2 cost **no write right at all** — describing your infrastructure, getting secrets out
 of the repository, exposing your domain through a tool contract. That is the argument for a wary IT
