@@ -237,6 +237,22 @@ environment beside their existing ones. Nothing existing is touched, and it neve
 Say the link as soon as it exists, in one line, and carry on with the criteria. It is the first
 thing of the pass they can actually use.
 
+## The other thing they can use: the workstation
+
+When `environment_bootstraps` comes back anything but green — no pool of isolated working copies,
+no launcher that opens one, or a launcher that never updates itself — offer **`galy:poste-de-travail`**
+once, at the close, in one line.
+
+**Offer it. Do not run it.** It is the one skill of this pass that writes on their machine — folders
+beside the repository, a shortcut on the desktop — and that half has no diff to read, so it asks
+its own question before doing anything. Starting it because the criterion was red would be exactly
+the failure this pass exists to avoid.
+
+One line is enough, because the skill explains itself:
+
+> `environment_bootstraps` n'est pas au vert : <ce qui manque, en cinq mots>. Je peux mettre en
+> place la réserve de copies isolées et l'icône qui les ouvre — dites-le et je le fais.
+
 ## Closing
 
 When the criteria are done, or when the user stops you, call `mcp__galy__maturity_challenge` once
