@@ -62,6 +62,31 @@ The hook is offline. It calls nothing, reads no token, and stays silent in repos
 nothing to do with Galy. A repository that has never been observed is offered the first pass once; a
 repository already connected is challenged at most once every twelve hours.
 
+Nothing has to be typed as a command. **A plain sentence starts the first pass** — "démarre
+l'onboarding Galy", "start the Galy onboarding", "où en sont nos pratiques ?" — and the `onboarding`
+skill takes it from there.
+
+## The first pass is a conversation, not a script
+
+`onboarding` orchestrates from your own session: it opens the pass, runs the probes the instance can
+run alone, then **asks you what it may look at** — the repository and its history, the forge, the
+infrastructure, production in read. Each authorised surface immediately puts a **subject agent** on
+it, and they work in parallel while the conversation continues.
+
+| Agent | What it observes |
+|---|---|
+| `ground` | the written doctrine, and whether the infrastructure description still matches reality |
+| `secrets` | the git history, the secret store, and whether production can be read without being able to write |
+| `delivery` | review, quality gate, release trace, rollback, environment isolation — over 90 days of forge history |
+| `schema` | the tooled schema path, reversible migrations, gated data repairs, server access |
+| `autonomy` | the tool contract, strategy in the system, and the four criteria of unattended work |
+
+**What you do not authorise is not probed**, and its criteria are recorded as not verifiable with the
+reason — never guessed, never quietly skipped. The questions gate the work; they are not a formality.
+
+The questions stay in your session on purpose: a subagent cannot reach you, so the orchestrator asks
+and the agents look.
+
 ## What you get
 
 Twelve skills that take a need from idea to shipped, each driven by the Galy objects you manage:
@@ -108,6 +133,7 @@ galy/
   .claude-plugin/plugin.json      # plugin manifest
   hooks/hooks.json                # SessionStart — what makes it start on its own
   hooks/session-start.mjs         # offline: decides whether Galy has anything to say here
+  agents/<name>.md                # the 5 subject agents the first pass dispatches
   skills/<name>/SKILL.md          # the 12 skills
   instructions/                   # shared conventions the skills reference
   contract/pm-v1.json             # the project-management tool + REST contract
