@@ -29,6 +29,7 @@ const FORBIDDEN = /^(code|diff|patch|file_content|source_code|file_contents|blob
 const READ_ARGS = {
   whoami: {},
   strategy_list_periods: {},
+  strategy_my_okrs: {},
   workflow_default_get_all: {},
   feature_brief_list: { take: 1 },
   feature_spec_list: { take: 1 },
@@ -171,6 +172,7 @@ async function runMcp(url, token, writeMode) {
   }
 
   await scanLiveWorkflowCatalog(client, liveNames);
+  await scanLiveOkrRitual(client, liveNames);
 
   if (writeMode) {
     console.log("  --write: write exercises are intentionally not run — they mutate the workspace.");
@@ -436,6 +438,101 @@ function scanWorkflowOptions() {
   record("workflow options: every option is both declared and read", ok, detail);
 }
 
+// Every Galy verb a skill names is a verb the contract declares.
+//
+// A skill that instructs the agent to call a tool nobody serves is a fiction, and it fails in the
+// worst possible way: not with an error at install time, but in front of a user, mid-ritual, once
+// the agent has already announced what it was about to do. The kit ships as text — nothing else
+// in it would ever notice.
+//
+// It happened, and that is why this exists: `feature_brief_add_acceptance_test` was named by
+// `feature-brief` while neither the contract nor any instance ever carried it.
+//
+// The rule has no exception on purpose. Naming a verb only to say it does not exist puts the same
+// phantom in front of the same reader; the sentence is written without it instead.
+function scanCitedVerbs() {
+  const declared = new Set(CONTRACT.tools.map((t) => t.name));
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+  const sources = [];
+  const skillsDir = join(root, "skills");
+  for (const name of readdirSync(skillsDir)) sources.push([`skills/${name}`, join(skillsDir, name, "SKILL.md")]);
+  for (const sub of ["instructions", "agents"]) {
+    const dir = join(root, sub);
+    for (const file of readdirSync(dir).filter((f) => f.endsWith(".md"))) {
+      sources.push([`${sub}/${file}`, join(dir, file)]);
+    }
+  }
+
+  const phantoms = new Map();          // verb -> Set of source labels
+  let citations = 0;
+  for (const [label, file] of sources) {
+    let body;
+    try { body = readFileSync(file, "utf8"); } catch { continue; }
+    for (const m of body.matchAll(/mcp__galy__([a-z0-9_]+)/g)) {
+      citations++;
+      if (declared.has(m[1])) continue;
+      if (!phantoms.has(m[1])) phantoms.set(m[1], new Set());
+      phantoms.get(m[1]).add(label);
+    }
+  }
+
+  const ok = phantoms.size === 0;
+  record("skills: every Galy verb named is one the contract declares", ok,
+    ok ? `${citations} citations across ${sources.length} files`
+       : [...phantoms].map(([verb, where]) => `${verb} named by ${[...where].join(", ")}`).join("; "));
+}
+
+// The check-in ritual, end to end, against the real instance.
+//
+// The two verbs are checked together because they are used together, and because the second one
+// cannot be exercised blind: `strategy_check_in_history` needs a key result id, which only the
+// first call can supply. Checking each in isolation would leave the pairing — the thing
+// `okr-review` and `okr-checkin` actually do — untested.
+//
+// A workspace with no key result is not a failure. It is skipped out loud, so nobody reads a
+// silent pass as a proof.
+async function scanLiveOkrRitual(client, liveNames) {
+  const CHECK = "the OKR ritual reads: my okrs, then one key result's history";
+  if (!liveNames.has("strategy_my_okrs") || !liveNames.has("strategy_check_in_history")) {
+    console.log("  [SKIP] OKR ritual: the instance does not advertise both read verbs yet.");
+    return;
+  }
+
+  let keyResultId = null;
+  try {
+    const mine = await client.callTool("strategy_my_okrs", {});
+    if (!mine || mine.success !== true) {
+      return record(CHECK, false, `strategy_my_okrs envelope: ${JSON.stringify(mine).slice(0, 160)}`);
+    }
+
+    // Le silence est la donnée nouvelle : un résultat clé servi sans son ancienneté se lit
+    // comme un chiffre à jour. On vérifie que le champ est là, pas qu'il vaut quelque chose.
+    const keyResults = (mine.objectives ?? []).flatMap((o) => o.key_results ?? []);
+    if (keyResults.length === 0) {
+      console.log("  [SKIP] OKR ritual: the authenticated user owns no key result in this period.");
+      return;
+    }
+
+    const missing = keyResults.filter((k) => !("days_since_check_in" in k));
+    if (missing.length) {
+      return record(CHECK, false, `${missing.length} key results served without days_since_check_in`);
+    }
+
+    keyResultId = keyResults[0].id;
+  } catch (e) {
+    return record(CHECK, false, e.message);
+  }
+
+  try {
+    const history = await client.callTool("strategy_check_in_history", { key_result_id: keyResultId });
+    const ok = history && history.success === true && Array.isArray(history.check_ins);
+    record(CHECK, ok, ok ? `key result ${keyResultId}: ${history.check_ins.length} check-ins`
+                         : `envelope: ${JSON.stringify(history).slice(0, 160)}`);
+  } catch (e) {
+    record(CHECK, false, e.message);
+  }
+}
+
 function fail(name) {
   results.push({ name, ok: false });
   console.log(`  [FAIL] ${name}`);
@@ -454,6 +551,7 @@ async function main() {
   scanForbidden(CONTRACT.tools, "contract");
   scanCriterionCoverage();
   scanWorkflowOptions();
+  scanCitedVerbs();
 
   if (!token || (!mcpUrl && !restBase)) {
     console.log("\nLive checks skipped — set GALY_ENDPOINT (or GALY_MCP_URL) and GALY_TOKEN to exercise the endpoint.");

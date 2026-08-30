@@ -92,6 +92,56 @@
       ],
       "returns": { "success": "bool", "objective_id": "int", "chain": "[{ id, title, icon, objective_type, period_id, period_name }]" }
     },
+    {
+      "name": "strategy_my_okrs",
+      "kind": "read",
+      "description": "The objectives someone is accountable for, with their key results, their progress and the LAST CHECK-IN of each. One call for 'where do my key results stand?', and the same selection the 'My OKRs' screen shows, so an agent and the page cannot answer differently. Every key result carries days_since_check_in: a figure at 40% reads the same whether it was reported yesterday or never, and that is what tells the two apart.",
+      "params": [
+        { "name": "owner_user_id", "type": "int", "required": false, "description": "Whose objectives. Defaults to the authenticated user." },
+        { "name": "period_id", "type": "int", "required": false, "description": "Which period. Left out, the latest one." },
+        { "name": "team_id", "type": "int", "required": false, "description": "A whole team's load instead of one person's. A team wins over the user." }
+      ],
+      "returns": { "success": "bool", "owner_user_id": "int", "period": "period?", "objectives": "[{ objective, parent_title, key_results: [{ id, title, unit, start_value, target_value, current_value, computed_progress, last_check_in, days_since_check_in }] }]" }
+    },
+    {
+      "name": "strategy_check_in_history",
+      "kind": "read",
+      "description": "The recorded check-ins of one key result, most recent first, each with who reported it. Answers 'is this figure really moving?', which the value of the day cannot.",
+      "params": [
+        { "name": "key_result_id", "type": "int", "required": true },
+        { "name": "take", "type": "int", "required": false, "default": 20, "description": "How many, most recent first (1..100)." }
+      ],
+      "returns": { "success": "bool", "key_result_id": "int", "check_ins": "[{ id, previous_value, new_value, confidence, comment, author_user_id, author_name, date_created }]" }
+    },
+    {
+      "name": "strategy_create_check_in",
+      "kind": "write",
+      "description": "Record where a key result stands today: the value, the confidence and one sentence. This is the normal way to move a figure — it leaves a dated trace and refreshes every gauge above it. The author is resolved from the token, so a check-in is always signed.",
+      "params": [
+        { "name": "key_result_id", "type": "int", "required": true },
+        { "name": "new_value", "type": "decimal", "required": true, "description": "The value today. It comes from the user, never from a deduction." },
+        { "name": "confidence", "type": "string", "required": false, "default": "on_track", "description": "on_track | at_risk | off_track — the owner's reading, not the agent's." },
+        { "name": "comment", "type": "string", "required": false, "description": "What explains the figure, in one or two sentences." }
+      ],
+      "returns": { "success": "bool", "key_result": "key_result", "objective_progress": "[{ objective_id, progress }]" }
+    },
+    {
+      "name": "strategy_update_key_result",
+      "kind": "write",
+      "description": "Correct a key result's definition — title, unit, starting value, target — or fix a current value entered by mistake. A figure that has genuinely MOVED is recorded with strategy_create_check_in instead, which leaves the trace. Only the fields passed are changed.",
+      "params": [
+        { "name": "key_result_id", "type": "int", "required": true },
+        { "name": "title", "type": "string", "required": false },
+        { "name": "metric_type", "type": "string", "required": false, "description": "number | percent | currency | boolean" },
+        { "name": "unit", "type": "string", "required": false },
+        { "name": "start_value", "type": "decimal", "required": false },
+        { "name": "target_value", "type": "decimal", "required": false },
+        { "name": "current_value", "type": "decimal", "required": false, "description": "A correction, not a move. To move it, use strategy_create_check_in." },
+        { "name": "objective_id", "type": "int", "required": false, "description": "Attach it to another objective." },
+        { "name": "previous_value_type", "type": "string", "required": false, "description": "period_start | previous_period." }
+      ],
+      "returns": { "success": "bool", "key_result": "key_result" }
+    },
 
     {
       "name": "feature_brief_create",

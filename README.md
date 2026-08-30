@@ -158,7 +158,7 @@ pretends otherwise.
 
 ## What you get
 
-Fifteen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
+Seventeen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
 
 | Skill | What it does |
 |---|---|
@@ -168,6 +168,8 @@ Fifteen skills that take a need from idea to shipped, each driven by the Galy ob
 | `workflows` | See and change what the skills may do on your behalf — and what your administrator decided for everyone. |
 | `bug-fix` | A bug from report to pull request: reproduce first, fix the cause, prove it on the user's own path, leave a follow-up check. |
 | `strategy` | Explore your objectives tree (read-only) and map work to the objective it serves. |
+| `okr-review` | Where the objectives stand: the tree with its progress, off-track and unreported key results first, and the pace each one now demands. Reads only. |
+| `okr-checkin` | The check-in ritual: one pass over the key results you own, one question, a dated trace on every figure that moved. |
 | `feature-brief` | Frame a business need into a brief — problem, vision, user stories, success criteria. |
 | `feature-spec` | Turn a brief into a technical spec — explore your codebase, design, phases, risks, acceptance tests. |
 | `feature-implement` | Implement a spec autonomously in your repo, phase by phase, ending at "PR ready". |
@@ -246,7 +248,7 @@ galy/
   hooks/hooks.json                # SessionStart — what makes it start on its own
   hooks/session-start.mjs         # offline: decides whether Galy has anything to say here
   agents/<name>.md                # the 6 subject agents the first pass dispatches
-  skills/<name>/SKILL.md          # the 15 skills
+  skills/<name>/SKILL.md          # the 17 skills
   instructions/                   # shared conventions the skills reference
   contract/pm-v1.json             # the project-management tool + REST contract
   contract/conformance/           # the outward-only conformance suite (MCP + REST)
