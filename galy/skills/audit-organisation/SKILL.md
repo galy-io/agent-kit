@@ -1,6 +1,6 @@
 ---
 name: audit-organisation
-description: Audit this team's engineering practices against the twenty maturity criteria, as a conversation. The same skill runs the first pass and every one after it. Fires on a plain sentence such as "démarre l'onboarding Galy", "Claude démarre le onboarding chez Galy", "commence la prise en main", "fais le point", "start the Galy onboarding", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. It audits how the team already tracks its work, opens a pull request adding a CLAUDE.md section and skills bound to their own environment, then puts one agent on each subject and records only what was actually seen. It observes and proposes; it applies nothing, merges nothing, and triggers nothing.
+description: Audit this team's engineering practices against Galy's twenty recommended criteria, one criterion at a time. The same skill runs the first pass and every one after it. Fires on a plain sentence such as "audite mon projet", "démarre l'onboarding Galy", "commence la prise en main", "fais le point", "start the Galy audit", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. For each criterion it says what it is about to check, checks it, and reports what it found. It observes and proposes; it applies nothing, merges nothing, and triggers nothing.
 ---
 
 # audit-organisation — observe the practices, trigger nothing
@@ -11,217 +11,166 @@ state is "not verifiable" with its reason — a healthy result, not a failure.
 
 Everything in this file is for you, the agent. **None of it is to be recited to the user.**
 
-The twenty criteria are not a list to read out. They are the steps of this pass.
-
 ## Why this skill is called `audit`, and what that costs you
 
-The name is what lets you open with *"je ne déclenche rien"* — the sentence that makes a wary team,
-and a warier IT department, agree to let an agent look at all. **That sentence is only true because
-this skill applies nothing.** It observes, it records what it observed, and it proposes; the only
-thing it ever puts in front of a team is a pull request, which changes nothing until someone
-merges it.
+The name is what lets a wary team, and a warier IT department, agree to let an agent look at all.
+**It is only honest because this skill applies nothing.** It observes, it records what it observed,
+and it proposes; the only thing it ever puts in front of a team is a pull request, which changes
+nothing until someone merges it.
 
 So the word and the behaviour hold each other up. **If you ever make this skill write, commit, run
 a migration, or trigger any pipeline, the name becomes a lie** — and the trust it bought is spent
 retroactively, on every team that already said yes. Add capability elsewhere: a new skill with an
 honest name. Never here.
 
-## One skill, every pass
+## The shape of this pass: one criterion at a time
 
-There is no separate skill for "the first time". The product already models it: a run carries a
-`kind`, and observations expire.
+**This is the part that decides whether anyone finishes the audit.** Not a questionnaire, not a
+plan, not a scope negotiation. A loop, and the user sees a result inside the first minute:
 
-- **Nothing ever observed** (`maturity_challenge` returns `observed: 0`) → `kind: "onboarding"`.
-  This is the first pass, and you say so.
-- **A user asked for it** → `kind: "manual"`.
-- **Something has gone stale** — `to_recheck` is not zero, and you are refreshing it →
-  `kind: "scheduled"`.
+> **Je vais auditer <le critère> pour vérifier que <la garde, en mots simples>.**
+> *(you look)*
+> **<ce que tu as trouvé, et l'état enregistré.>**
 
-The procedure below does not change between them. What changes is where you start: on a repeat
-pass, `maturity_challenge` tells you what is stale and what was never probed, and **that** is where
-the work is. Re-observing fresh green buys nothing.
+Then the next one. Every criterion, in order, until they stop you or you run out.
 
-## You are the orchestrator, and you stay in the main session
+Three things this shape buys, and each of them is a failure mode of the version it replaces:
 
-You ask the questions, you dispatch the work, you assemble the answer. The looking is done by six
-subject agents you launch — `galy:project-management`, `galy:ground`, `galy:secrets`,
-`galy:delivery`, `galy:schema`, `galy:autonomy` — each owning its own criteria and recording them
-itself. A seventh skill, `galy:adapt`, turns the first one's findings into a pull request.
+- **No upfront questions.** A permission questionnaire arrives when the user has zero context: the
+  words mean nothing to them yet, and it reads as bureaucracy before a single useful sentence. Ask
+  nothing until you are blocked, and then ask about **that one thing**, in the middle of the
+  criterion that needs it, where the question finally has a meaning.
+- **No batch.** A report that arrives twenty minutes later, all at once, cannot be corrected. A
+  conclusion per criterion lets the user say "non, c'est faux, regarde là" while it still costs
+  nothing to redo.
+- **No plan announcement.** Do not list what you are about to do. Do it.
 
-**Do not delegate the questions.** A subagent cannot reach the user: `AskUserQuestion` only works
-here, in the session the person is looking at. That is the reason for this split, not a style
-preference.
+### The order
 
-If this harness has no way to launch agents, do the whole pass yourself, in the same order, with
-the same discipline. Each agent's file is a readable procedure — follow it.
+`mcp__galy__maturity_challenge` decides it, and you do not second-guess it:
 
-## The order
+1. `next_step` — the server names the single criterion that unlocks the most. Start there.
+2. `at_risk` — a power whose guard nobody saw. These matter more than a green one nearby.
+3. everything `never_probed`, then everything stale (`to_recheck`).
+4. the rest, worst state first: `absent`, then `partial`.
 
-### 1. Open with one sentence, and only one
+Re-observing fresh green buys nothing. Skip it and say you skipped it.
 
-In the user's language, naming the workspace the observations will go into:
+### What "one at a time" does not mean
+
+It does not mean one agent per criterion when several share a source. `galy:delivery` reads ninety
+days of forge history once and answers five criteria from it; splitting that into five agents pays
+the same cost five times. **Group by what you have to go and read, report by criterion.** The user
+sees five conclusions, one after another, whatever you did behind them.
+
+## When you actually need permission
+
+Only when a criterion cannot be observed without it, and only then:
+
+> Pour ce critère j'aurais besoin de <la chose précise>. Je peux ?
+
+If they refuse, or you cannot reach it, record `unverifiable` with `unverifiable_reason` and
+**name who could observe it**. That turns a grey into somebody's next action instead of a hole.
+Then move to the next criterion — a refusal ends one criterion, never the pass.
+
+Two limits you never cross, whatever anyone authorises: you copy no secret value, and you attempt
+no action the repository's own doctrine forbids.
+
+## The agents
+
+Six subject agents carry the method for their own criteria — `galy:project-management`,
+`galy:ground`, `galy:secrets`, `galy:delivery`, `galy:schema`, `galy:autonomy`. Each records what
+it observed itself, with the `run_id`.
+
+**`galy:project-management` runs first**, alone, and you wait for it. It answers the one question
+that changes what everything else means: *where does this team's work already live?* A team that
+already tracks its work will not move it, and its binding proposal decides what `galy:adapt` can
+propose later.
+
+You stay in the main session: `AskUserQuestion` only works here, and a subagent cannot reach the
+user. If this harness cannot launch agents, do the work yourself — each agent file is a readable
+procedure.
+
+## Opening the pass
+
+- `mcp__galy__maturity_challenge` — which pass is this, and where is the work.
+- `mcp__galy__maturity_start_run` with the `kind` that answer implies: `onboarding` when nothing
+  was ever observed, `scheduled` when refreshing what went stale, `manual` when a user asked.
+  **Keep the `run_id`** — every agent needs it.
+- `mcp__galy__maturity_run_probes` — what the instance can measure by itself, it measures. Do not
+  spend anyone's judgement on what a probe already answered.
+
+Open with one sentence, in the user's language, naming the workspace the observations go into —
+`mcp__galy__whoami` gives you the name:
 
 > Je vais auditer votre projet avec les bonnes pratiques recommandées par Galy, un par un.
 > Les constats iront dans l'espace « <nom> ».
 
-`mcp__galy__whoami` gives you that name. Then start.
-
 **Nothing else.** No promise about what you will not do, no warning about what could go wrong, no
-explanation of what an audit is, no announcement of what the result will look like. The user came
-to have their project audited; every sentence before the first observation is a sentence they did
-not ask for, and they read it as stalling — or worse, as a disclaimer.
+explanation of what an audit is, no announcement of what the result will look like. Every sentence
+before the first observation is one the user did not ask for, and reads as stalling — or as a
+disclaimer. The guarantees are still true and still enforced by everything above; they are simply
+not the agent's to advertise. A guarantee is worth what its behaviour is worth.
 
-The promises this skill used to recite are still true, and they are still enforced by everything
-below. They are simply **not the agent's to advertise**: a guarantee is worth what its behaviour is
-worth, and repeating it out loud adds nothing to the behaviour while costing the reader the
-attention they came to spend on their own repository.
+## Each conclusion
 
-### 2. Open the pass, and stand on measured ground
+Two or three lines, and they answer what a human actually wants to know:
 
-- `mcp__galy__maturity_challenge` first, to find out which pass this is — see *One skill, every
-  pass* above.
-- `mcp__galy__maturity_start_run` with the `kind` that answer implies. **Keep the `run_id`** —
-  every agent needs it, and every observation belongs to it.
-- `mcp__galy__maturity_run_probes` — what the instance can see by itself, it sees by itself. Do
-  not spend anyone's judgement on what a probe already answered.
-- `mcp__galy__maturity_challenge` again after the probes — the level, what is already observed,
-  what has never been looked at, what is at risk. This tells you where the pass has work to do.
+- **what is true today**, in plain words — not the criterion's name repeated back;
+- **the fact that decided it**: a count, a date, a path. Never a secret value;
+- **the state recorded**, and if it is not green, the one thing that would change it.
 
-### 3. Ask what you may look at — and mean it
+Read the state `mcp__galy__maturity_record` returns rather than the one you asked for: an unguarded
+power is stored lower, and the user must hear what was stored.
 
-One `AskUserQuestion`, and it is the load-bearing one, because **the answer decides which agents
-run**. Phrase it for a human, not for an engineer.
+Pass `unguarded_power: true` whenever the power exists and you did not see its guard. "The agent
+can change the schema and nothing traces what it does" must worry, not reassure.
 
-> **Jusqu'où puis-je regarder ?** *(plusieurs réponses possibles)*
-> - **Le dépôt et son historique** — code, règles écrites, historique git complet
-> - **La forge** — demandes de fusion, exécutions de la chaîne d'intégration, sur 90 jours
-> - **L'infrastructure** — résoudre les noms, vérifier que les hôtes décrits répondent
-> - **La production, en lecture** — base, journaux, tableaux de bord
+## Handing back the adaptation
 
-Whatever is not selected is **not probed**, and its criteria are recorded `unverifiable` with
-`unverifiable_reason` saying the pass was not authorised to look, plus who could. That is not a
-consolation prize — it is the difference between a refusal you recorded and a refusal you
-ignored, and it is exactly the discipline this product sells.
+Once `galy:project-management` has returned, run **`galy:adapt`**: it opens a branch and a pull
+request carrying an added, delimited section in the root instruction file and skills bound to their
+environment beside their existing ones. Nothing existing is touched, and it never merges.
 
-**Launch each agent the moment its surface is authorised.** Do not wait for the rest of the
-conversation: the agents run while you keep talking.
+Say the link as soon as it exists, in one line, and carry on with the criteria. It is the first
+thing of the pass they can actually use.
 
-| Authorised | Agent | Criteria it owns |
-|---|---|---|
-| the repository | **`galy:project-management`** — **first, alone** | strategy in the system |
-| the repository | `galy:ground` | doctrine, infrastructure described |
-| the repository | `galy:secrets` | secrets in history, secret store, production read path |
-| the forge | `galy:delivery` | review, quality gate, release trace, rollback, environment |
-| the repository | `galy:schema` | schema path, reversible migrations, data repairs, servers |
-| the repository | `galy:autonomy` | tool contract, loops, invariants, verification, effect |
+## Closing
 
-**`galy:project-management` goes first and on its own**, and you wait for it. It answers the only
-question that changes what everything else means: *where does this team's work already live?* Its
-binding proposal decides which skills get adapted, under which names, against which servers — and
-a team that already tracks its work will not move it. Launch the other four as soon as it returns.
+When the criteria are done, or when the user stops you, call `mcp__galy__maturity_challenge` once
+more and close on **what it returns**, not on what you remember:
 
-Give each one, in its prompt: the `run_id`, the criteria it owns, the permission envelope in
-plain words, and the one line of context you already have about the stack. Nothing else — they
-carry their own method.
+1. **The count**, with its full denominator: "6 observés sur 20, dont 9 non vérifiables". Never a
+   percentage of what you managed to look at.
+2. **What is at risk**, if anything — first, before the good news.
+3. **One next step**, with its duration and its risk. Not a shopping list: one step.
 
-### 4. Ask the framing questions while they work
+Levels 1 and 2 cost **no write right at all** — describing your infrastructure, getting secrets out
+of the repository, exposing your domain through a tool contract. That is the argument for a wary IT
+department, and it belongs here rather than in an opening paragraph.
 
-A second `AskUserQuestion`, sent **after** the agents are launched, never before — waiting for an
-answer before dispatching wastes the only parallelism this pass has.
+## Then, and only then, the retrospective
 
-> **Qu'est-ce qui vous inquiète le plus aujourd'hui ?**
-> - Ce qu'un agent pourrait casser
-> - Ce qui ralentit la livraison
-> - Ce qu'on ne sait pas expliquer à une direction informatique
-> - Rien de précis — faites le tour
-
-> **Qui va lire le résultat ?**
-> - Moi seul, technique
-> - Mon équipe
-> - Ma direction, ou une DSI qui doit être rassurée
-
-The first answer decides what leads your report. The second decides its altitude — for a wary IT
-department, lead with the fact that levels 1 and 2 grant **no write right at all**.
-
-Add the questions `maturity_challenge` returned in `open_questions` if any are worth a human's
-time; they come ordered by what they unlock, and one that unlocks four criteria goes first.
-
-### 5. Hand back something usable, before the report
-
-The moment `galy:project-management` returns its binding, run **`galy:adapt`**. It opens a branch
-and a pull request carrying two things and nothing else: an added, delimited section in the root
-instruction file, and skills bound to *their* environment beside their existing ones.
-
-That pull request is the first tangible output of the whole pass, and it is deliberately not a
-report: it is a change they can read, argue with, and merge on their own terms. **Nothing existing
-is touched** — no command renamed, no workflow edited, no `.mcp.json` change — and the skill never
-merges what it opens.
-
-Say the link out loud as soon as it exists. The rest of the pass keeps running behind it.
-
-### 6. Assemble — and check the arithmetic
-
-When the agents come back, call `mcp__galy__maturity_challenge` again and **report from what it
-returns**, not from what the agents told you. The server is the record; an agent's summary is a
-claim about it. If the two disagree, say so — a `maturity_record` can store a state lower than
-the one requested, and that gap is worth a sentence.
-
-Then write what is missing, and only these two, because they cost nothing and unlock most of
-level 1: if there is no root instruction file, or no infrastructure description, show the draft
-its agent produced. **Show it. Do not write it to disk, do not commit it.** Then record the
-criterion on what is true *now* — a draft the user has not accepted is not a written doctrine.
-
-Never do the same for a criterion that grants a power. Tooling, deployment rights, schema paths:
-those are decisions, and they belong to the team.
-
-## What you hand back
-
-Four things, in this order:
-
-1. **What was observed** — how many criteria, in which states, out of twenty. Give the full
-   denominator: "6 observed out of 20, of which 9 not verifiable". Never a percentage of what you
-   managed to look at.
-2. **What is at risk** — a power whose guard nobody saw. First, before the good news.
-3. **The open questions**, ordered by what they unlock, phrased for a human.
-4. **A single next step**, with its duration and its risk. Not a shopping list: one step.
-
-## Then, and only then, write the retrospective
-
-**After** the report is delivered — never before, and never as a condition of it — write down what
-this pass was like: what worked, what rubbed, what it could not answer, and what the user suggested.
+**After** the report — never before, never as a condition of it:
 
 `mcp__galy__onboarding_retro_record(run_id, worked_md, friction_md, questions_md, suggestions_md)`.
 
-**Nothing is asked, because nothing is theirs to decide.** It is written to their own instance and
-stays there, like everything else this contract writes. Writing in your own workspace asks nobody's
-permission — and whether that instance forwards anything to Galy is a setting their administrator
-holds, not a question for the person in front of you.
+It is written to their own instance and stays there. Writing in your own workspace asks nobody's
+permission, and whether that instance forwards anything to Galy is a setting their administrator
+holds — not a question for the person in front of you.
 
-Each field carries **only** what its name says, about **the process**:
+Each field carries only what its name says, **about the process**: what helped, where the pass
+stalled or wasted their time, what it could not answer, what would have made it better in their own
+words. Never code, paths, host names, command output, secrets, customer names, nor the observations
+themselves — those belong to the workspace.
 
-- `worked_md` — what genuinely helped: a question that unlocked something, an agent that found
-  what nobody expected.
-- `friction_md` — where the pass stalled, asked a bad question, or wasted the user's time.
-- `questions_md` — what the pass could not answer and should have been able to.
-- `suggestions_md` — what would have made it better, in the user's own words where they gave them.
-
-Keep it about the process. Never code, file excerpts, paths, host names, command output, secrets,
-customer names, nor the observations you recorded — those belong to the workspace and stay in it.
-
-### Say one line, and do not turn it into a choice
-
-The user has no decision to make here. **Do not ask, do not offer, do not hint at a preference** —
-implying a control they do not have is worse than saying nothing at all. One line, then stop:
+Then one line, and do not turn it into a choice:
 
 > Rétrospective de cette prise en main écrite dans votre instance : qu'elle remonte ou non à Galy
 > est un réglage d'instance que votre administrateur tient, désactivé par défaut.
 
-That is the whole of it. No paragraph, no link to a settings page they cannot change, no "would you
-like to…". If they ask about it, answer plainly: the setting lives in the instance configuration,
-their administrator decides, and by default nothing leaves.
-
 ## The tone
 
-You challenge, you do not judge. The difference fits in one sentence: "your quality gate has
-refused nothing in 90 days — so it blocks nothing" is a useful observation; "your practices are
-immature" teaches nobody anything and ends the conversation.
+You challenge, you do not judge. "Votre porte de qualité n'a rien refusé en 90 jours — elle ne
+bloque donc rien" is a useful observation; "vos pratiques sont immatures" teaches nobody anything
+and ends the conversation.
