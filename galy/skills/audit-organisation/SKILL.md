@@ -162,8 +162,12 @@ procedure.
 Open with one sentence, in the user's language, naming the workspace the observations go into —
 `mcp__galy__whoami` gives you the name:
 
-> Je vais auditer votre projet avec les bonnes pratiques recommandées par Galy, un par un.
-> Les constats iront dans l'espace « <nom> ».
+> Je vais auditer ton projet avec les bonnes pratiques recommandées par Galy, un critère à la
+> fois. Les constats iront dans l'espace « <nom> ».
+
+**Then go straight to the first criterion.** Say which one you are looking at and why, look, give
+the line. The user should see a result before they see anything else — not a question, not a
+setup step, not a scope negotiation.
 
 **Nothing else.** No promise about what you will not do, no warning about what could go wrong, no
 explanation of what an audit is, no announcement of what the result will look like. Every sentence
@@ -171,12 +175,109 @@ before the first observation is one the user did not ask for, and reads as stall
 disclaimer. The guarantees are still true and still enforced by everything above; they are simply
 not the agent's to advertise. A guarantee is worth what its behaviour is worth.
 
+## Each line
+
+On screen, one line, and it answers what a human actually wants to know:
+
+> **<la pratique, en clair>** — <l'état, en clair> : <le fait qui a décidé>.
+
+- **the practice, in plain words, in the user's language.** NEVER its identifier. `doctrine_written`
+  and `schema_via_toolpath` are database keys: they are how the tools address a criterion, not how
+  a person reads one. Every call returns `name` beside the key — use that, or say the thing
+  yourself. A line the user has to decode is a line they skip, and twenty skipped lines is the
+  whole pass.
+- **the state in plain words too.** "constaté", "partiel", "absent", "pas vérifiable" — not
+  `observed`, not `partial`. Same reason.
+- **the fact that decided it, and it must be something you SAW.** A count, a date, a path, a
+  command and what it answered. Never a secret value, never a paraphrase of the criterion's own
+  name.
+
+  **This is the rule that gets broken, and here is what breaking it looks like:**
+
+  > La stratégie vit dans le système : partiel, parce que le contrat d'outils n'a qu'un verbe
+  > d'écriture documenté comme saisie humaine.
+
+  That is not an observation, it is a deduction about how the product is built — and it reads as
+  if the tooling were broken, which is a different claim entirely and a false one. What was
+  actually observable is much simpler, and it is the thing the criterion asks about:
+
+  > La stratégie vit dans le système : partiel — 3 objectifs, 7 résultats clés, aucun alimenté par
+  > une source automatique.
+
+  **Go and look at the data.** If you cannot state a fact about *their* project — their objectives,
+  their files, their history, their pipeline runs — you have not observed the criterion. Reasoning
+  about the shape of the tooling is not a substitute, and it is how a line becomes both unreadable
+  and wrong.
+
+- **No internal vocabulary on the line. Ever.** Tool names, verb names, table names, criterion
+  identifiers, state names in English — every one of them is how the machine addresses a thing,
+  not how a person reads one. A line the user has to decode is a line they skip.
+
+  If a verb's absence really is the finding — a genuine gap in the tooling — that belongs in
+  `evidence_md`, and the line says the consequence in plain words: « rien ne permet d'y rattacher
+  une mesure automatique ».
+- **the state you recorded**, read back from what `mcp__galy__maturity_record` returned rather than
+  the one you asked for: an unguarded power is stored lower, and the user must hear what was stored.
+- **no advice on the line.** The one next step is chosen once, at the close, by the server. Twenty
+  pieces of advice is not twenty times as useful as one; it is a list nobody acts on.
+
+Pass `unguarded_power: true` whenever the power exists and you did not see its guard. "The agent
+can change the schema and nothing traces what it does" must worry, not reassure — and it goes
+through the checkpoint like any other non-green finding.
+
+Everything you did not put on the line goes in `evidence_md`: the paths, the counts, the commands
+you ran, what you looked for and did not find. That is what the maturity page shows when the user
+opens the criterion, and it is what makes the verdict arguable instead of oracular.
+
+## Handing back the adaptation
+
+Once `galy:project-management` has returned, run **`galy:adapt`**: it opens a branch and a pull
+request carrying an added, delimited section in the root instruction file and skills bound to their
+environment beside their existing ones. Nothing existing is touched, and it never merges.
+
+Say the link as soon as it exists, in one line, and carry on with the criteria. It is the first
+thing of the pass they can actually use.
+
+## When a criterion is not green: the catalogue carries its own method
+
+**There is no skill per criterion, and there never will be.** Twenty criteria would be twenty
+entries in a menu nobody reads, for a product whose whole promise is not to spend the reader's
+attention. The procedure for putting a criterion in place lives with the criterion:
+`mcp__galy__maturity_remediation_get(criterion_id)` returns it.
+
+Three rules, and they are the same for all twenty:
+
+- **Fetch it only for a criterion you are about to work on.** It is long. Loading it for a
+  criterion that is green, or that the user has not asked to fix, spends context on nothing.
+- **Offer, do not start.** A red criterion is not consent. The offer is **one sentence: what you
+  saw, then the question** — and the question is a real one, not a heading over work you have
+  already begun. The user answers, and only then do you fetch the procedure.
+
+  > Pas de copies de travail isolées ici, et pas de lanceur qui en ouvre une. Je peux vous en
+  > mettre un en place sur ce projet — vous voulez ?
+
+  Name what is actually missing, in the words a developer uses. Never the criterion's own name
+  said back to them, never a level, never a score. If they say no, record the criterion on what is
+  true and move on: no second attempt later in the same pass.
+- **Follow it, and let it do its own asking.** A procedure that writes on their machine carries
+  its own question — do not paraphrase it, do not pre-approve it, and do not skip it because the
+  user already said yes to the audit.
+
+When the verb answers `has_procedure: false`, that criterion has no written method yet. Say so
+plainly. **Never write one from memory**: a method invented on a subject that touches production
+is worse than no method, because it looks like one.
+
 ## Where this work hangs: the objective
 
-**Before the criteria**, make sure the audit has a home in the strategy tree. A maturity pass that
-hangs under nothing is a report; hung under an objective, it is work someone answers for — and the
-twentieth criterion, `effect_measured`, is exactly the claim that intent goes down to execution and
-measurement comes back up.
+**At the END of the pass, never at the start.** This section used to run first, and it was the
+wrong order for one plain reason: the user asks for an audit and the first thing that happens is a
+question about their strategy tree. They came to find out where their practices stand; they get a
+form about objectives instead, before a single criterion has been looked at.
+
+So: look at the criteria first, hand back the findings, and raise the objective when there is
+something concrete to hang on it. A pass that hangs under nothing is a report; hung under an
+objective, it is work someone answers for — and the twentieth criterion, the one about measuring
+effect, is exactly the claim that intent goes down to execution and measurement comes back up.
 
 Look for an objective meaning **« Améliorer l'organisation grâce à Galy »**, and under it a
 sub-objective meaning **« Ajuster l'organisation de la tech »** — in the user's language.
@@ -240,72 +341,6 @@ thing the whole product exists to hold. Something appearing there that nobody as
 failure as a grid filled in behind their back, and it is the more visible of the two.
 
 A refusal costs nothing: record the criteria anyway and close without hanging them. Never insist.
-
-## Each line
-
-On screen, one line, and it answers what a human actually wants to know:
-
-> **<la pratique, en clair>** — <l'état, en clair> : <le fait qui a décidé>.
-
-- **the practice, in plain words, in the user's language.** NEVER its identifier. `doctrine_written`
-  and `schema_via_toolpath` are database keys: they are how the tools address a criterion, not how
-  a person reads one. Every call returns `name` beside the key — use that, or say the thing
-  yourself. A line the user has to decode is a line they skip, and twenty skipped lines is the
-  whole pass.
-- **the state in plain words too.** "constaté", "partiel", "absent", "pas vérifiable" — not
-  `observed`, not `partial`. Same reason.
-- **the fact that decided it**: a count, a date, a path. Never a secret value, never a paraphrase
-  of the criterion's own name.
-- **the state you recorded**, read back from what `mcp__galy__maturity_record` returned rather than
-  the one you asked for: an unguarded power is stored lower, and the user must hear what was stored.
-- **no advice on the line.** The one next step is chosen once, at the close, by the server. Twenty
-  pieces of advice is not twenty times as useful as one; it is a list nobody acts on.
-
-Pass `unguarded_power: true` whenever the power exists and you did not see its guard. "The agent
-can change the schema and nothing traces what it does" must worry, not reassure — and it goes
-through the checkpoint like any other non-green finding.
-
-Everything you did not put on the line goes in `evidence_md`: the paths, the counts, the commands
-you ran, what you looked for and did not find. That is what the maturity page shows when the user
-opens the criterion, and it is what makes the verdict arguable instead of oracular.
-
-## Handing back the adaptation
-
-Once `galy:project-management` has returned, run **`galy:adapt`**: it opens a branch and a pull
-request carrying an added, delimited section in the root instruction file and skills bound to their
-environment beside their existing ones. Nothing existing is touched, and it never merges.
-
-Say the link as soon as it exists, in one line, and carry on with the criteria. It is the first
-thing of the pass they can actually use.
-
-## When a criterion is not green: the catalogue carries its own method
-
-**There is no skill per criterion, and there never will be.** Twenty criteria would be twenty
-entries in a menu nobody reads, for a product whose whole promise is not to spend the reader's
-attention. The procedure for putting a criterion in place lives with the criterion:
-`mcp__galy__maturity_remediation_get(criterion_id)` returns it.
-
-Three rules, and they are the same for all twenty:
-
-- **Fetch it only for a criterion you are about to work on.** It is long. Loading it for a
-  criterion that is green, or that the user has not asked to fix, spends context on nothing.
-- **Offer, do not start.** A red criterion is not consent. The offer is **one sentence: what you
-  saw, then the question** — and the question is a real one, not a heading over work you have
-  already begun. The user answers, and only then do you fetch the procedure.
-
-  > Pas de copies de travail isolées ici, et pas de lanceur qui en ouvre une. Je peux vous en
-  > mettre un en place sur ce projet — vous voulez ?
-
-  Name what is actually missing, in the words a developer uses. Never the criterion's own name
-  said back to them, never a level, never a score. If they say no, record the criterion on what is
-  true and move on: no second attempt later in the same pass.
-- **Follow it, and let it do its own asking.** A procedure that writes on their machine carries
-  its own question — do not paraphrase it, do not pre-approve it, and do not skip it because the
-  user already said yes to the audit.
-
-When the verb answers `has_procedure: false`, that criterion has no written method yet. Say so
-plainly. **Never write one from memory**: a method invented on a subject that touches production
-is worse than no method, because it looks like one.
 
 ## Closing
 
