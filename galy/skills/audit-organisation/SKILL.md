@@ -177,6 +177,12 @@ that changes what everything else means: *where does this team's work already li
 already tracks its work will not move it, and its binding proposal decides what `galy:adapt` can
 propose later.
 
+**`galy:delivery` runs second**, before the rest, for the same reason and no other: besides its
+five verdicts it returns the named facts about their chain — the pipeline file and its trigger,
+whether a push to the default branch deploys, the rollback, the commands that already exist — and
+without them the adaptation writes no delivery skill at all. It reads ninety days of history once
+either way, so moving it forward costs nothing.
+
 If this harness cannot launch agents, do the work yourself — each agent file is a readable
 procedure.
 
@@ -261,9 +267,14 @@ opens the criterion, and it is what makes the verdict arguable instead of oracul
 
 ## Handing back the adaptation
 
-Once `galy:project-management` has returned, run **`galy:adapt`**: it opens a branch and a pull
-request carrying an added, delimited section in the root instruction file and skills bound to their
-environment beside their existing ones. Nothing existing is touched, and it never merges.
+Once `galy:project-management` **and `galy:delivery`** have returned, run **`galy:adapt`**: it
+opens a branch and a pull request carrying an added, delimited section in the root instruction
+file, skills bound to their environment beside their existing ones, and — when the delivery facts
+came back — a merge skill and a release skill written against their own pipeline, holes and all.
+Nothing existing is touched, and it never merges.
+
+Waiting for the second agent is not caution, it is the difference between a pull request they can
+use and one that describes somebody else's chain.
 
 Say the link as soon as it exists, in one line, and carry on with the criteria. It is the first
 thing of the pass they can actually use.

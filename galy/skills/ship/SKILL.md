@@ -28,11 +28,27 @@ merges** — merging is your own CI/process (the extension point below).
    `confident` + high confidence + low risk → finish hands-off; otherwise the human gate fires.
 5. **Report.** Print the PR link, the panel outcome (N found / M fixed, rounds), and the naked verdict.
 
-## Extension point — merge (not done here)
+## Extension point — merge and release (not done here)
 
 The kit stops at PR ready by design. Wire your own merge to whatever you already run: a GitHub/GitLab
 merge queue, a required CI check, a human approval. If you want a post-ready hook (e.g. auto-merge on
 green CI), document it in your `CLAUDE.md` and trigger it from your own tooling — never from this skill.
+
+**What happens on the other side of that handoff is described, not performed, by three settings**
+stored on your Galy account beside `ship`/`auto_ship` — they say what YOUR pipeline does, so that
+a skill written for your repository never has to guess:
+
+| Option | What it says |
+|---|---|
+| `ship`/`release_trigger` | whether merging is enough to ship, or a separate call is needed |
+| `ship`/`release_hold` | whether a release waits for a person, or goes on green |
+| `ship`/`rollback_mode` | how going back is done here — including *there is no way back yet* |
+
+Read them with `mcp__galy__workflow_policy_resolve`, never from memory, and read the vocabulary
+this instance actually knows with `mcp__galy__workflow_catalog_list`: an option it does not know
+is a setting nothing will ever honour. `galy:adapt` is what turns their answers into skills that
+merge and ship the way your team already does; **this skill still stops at PR ready**, whatever
+any of them is set to.
 
 ## Discipline
 
