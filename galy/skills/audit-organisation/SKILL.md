@@ -178,8 +178,13 @@ hangs under nothing is a report; hung under an objective, it is work someone ans
 twentieth criterion, `effect_measured`, is exactly the claim that intent goes down to execution and
 measurement comes back up.
 
-Look for an objective meaning **« Améliorer l'organisation grâce à l'I.A. »**, and under it a
+Look for an objective meaning **« Améliorer l'organisation grâce à Galy »**, and under it a
 sub-objective meaning **« Ajuster l'organisation de la tech »** — in the user's language.
+
+The objective is named after **this product**, not after the technology. « grâce à l'I.A. » is a
+slogan: it names a field, it commits to nothing, and in a year nobody can say whether it was met.
+« grâce à Galy » names the thing that is supposed to produce the change — so the objective has an
+owner, and the twentieth criterion, `effect_measured`, has something to measure.
 
 `mcp__galy__strategy_search_objectives` finds it; `mcp__galy__strategy_navigate_children` shows what
 hangs under it.
@@ -210,7 +215,7 @@ So: **say what is there, then what you propose.** Never a count, never « rien e
 a word on how their tree is built.
 
 > Tu es bien branché sur Galy, et il y a déjà des objectifs — mais aucun où rattacher un travail
-> sur l'organisation. Je te propose d'ajouter « Améliorer l'organisation grâce à l'I.A. », avec
+> sur l'organisation. Je te propose d'ajouter « Améliorer l'organisation grâce à Galy », avec
 > « Ajuster l'organisation de la tech » dessous, pour que ce que je trouve ici y soit rattaché.
 
 **Follow their register.** They wrote to you first: if they say « tu », answer « tu ». An assistant
