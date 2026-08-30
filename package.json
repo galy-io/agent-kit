@@ -1,5 +1,5 @@
 {
-  "name": "@galy/claude-kit-repo",
+  "name": "@galy/agent-kit-repo",
   "version": "1.0.0",
   "description": "Galy Claude Kit — one-command setup, runnable straight from this repository with npx.",
   "type": "module",

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // galy-setup — one-command onboarding for the Galy Claude Kit.
 //
-//   npx -y github:galy-io/claude-kit <token> --endpoint https://<your-workspace>.galy.cloud
+//   npx -y github:galy-io/agent-kit <token> --endpoint https://<your-workspace>.galy.cloud
 //
 // Does four things, in order, each best-effort with a clear message on failure:
 //   a) installs the plugin via the Claude CLI (marketplace add + install), or prints
@@ -27,7 +27,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 
-const MARKETPLACE = "galy-io/claude-kit";
+const MARKETPLACE = "galy-io/agent-kit";
 const GITIGNORE_LINE = ".galy/config.json";
 
 // How the Claude CLI is spelled depends on how it was installed, and guessing wrong is not a
@@ -80,7 +80,7 @@ function warn(msg) { console.log(`  ! ${msg}`); }
 
 const HELP = `galy-setup — connect your Claude Code to your Galy workspace
 
-  npx -y github:galy-io/claude-kit <token> --endpoint https://<your-workspace>.galy.cloud
+  npx -y github:galy-io/agent-kit <token> --endpoint https://<your-workspace>.galy.cloud
 
   <token>       your Galy API token
   --endpoint    the address of your workspace
@@ -182,22 +182,76 @@ function writeConfig(endpoint, token) {
   }
 }
 
-// (d) Smoke-test the endpoint with the token.
+// (d) Prove the connection, and name the failure when there is one.
+//
+// Three failures wear the same face if you only make one call — a wrong host, a workspace that
+// does not exist at that address, and a rejected token — and each sends the reader after a
+// different problem. So we make two calls, in the order that narrows:
+//
+//   /health   anonymous, outside the rate limiter. It answers when the ADDRESS is right.
+//             Network error -> unreachable address. 404 -> the address answers, but no
+//             workspace lives there.
+//   /mcp      with the token. 401/403 -> the token. 404 -> the address serves Galy but not
+//             the MCP route, on an image older than the profile fix.
+//
+// And it is /mcp we prove, not /api/pm. Those are two different doors: the REST one is what the
+// `galy` CLI uses, the MCP one is what the ASSISTANT uses — the whole point of this command.
+// Testing only the first announced "token accepted" on instances where the agent would then
+// have found no tool at all, which is the single outcome this script exists to rule out.
 async function smoke(endpoint, token) {
   step("Testing the connection");
+
+  let health;
   try {
-    const res = await fetch(`${endpoint}/api/pm/search?q=ping`, {
-      headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
-    });
-    if (res.status === 401 || res.status === 403) {
-      fail(`${endpoint} rejected the token (${res.status}).\n  Either the token is revoked, or it belongs to a different workspace than --endpoint.\n  Both the address and a fresh token are on: ${endpoint}/account/assistant`);
-    }
-    if (!res.ok) fail(`the endpoint returned HTTP ${res.status}. Check the --endpoint url.`);
-    await res.text();
-    ok("endpoint reachable and token accepted.");
+    health = await fetch(`${endpoint}/health`, { headers: { "Accept": "application/json" } });
   } catch (e) {
-    fail(`could not reach ${endpoint}: ${e.message}`);
+    fail(`unreachable address: nothing answered at ${endpoint}.
+  ${e.message}
+  Check the address itself — a typo in the host reads exactly like this.`);
   }
+
+  if (health.status === 404) {
+    fail(`no workspace at ${endpoint}.
+  Something answers there, but it serves no Galy workspace: the subdomain is probably not
+  yours. The exact address is printed on your own "Connect my agent" screen.`);
+  }
+  if (!health.ok) {
+    fail(`${endpoint} answered HTTP ${health.status} on /health — that address does not serve a Galy instance.`);
+  }
+  ok("address reachable, a Galy workspace answers there.");
+
+  // The MCP handshake, with the token: exactly what the assistant does on its first call.
+  let mcp;
+  try {
+    mcp = await fetch(`${endpoint}/mcp`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "initialize",
+        params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "galy-setup", version: "1" } },
+      }),
+    });
+  } catch (e) {
+    fail(`the address answered but /mcp did not: ${e.message}`);
+  }
+
+  if (mcp.status === 401 || mcp.status === 403) {
+    fail(`token rejected by ${endpoint} (${mcp.status}).
+  The workspace is there, so this is the token: revoked, mistyped, or minted for another
+  workspace. Mint a fresh one on ${endpoint}/account/assistant`);
+  }
+  if (mcp.status === 404) {
+    fail(`${endpoint} serves a Galy workspace but no MCP endpoint (404 on /mcp).
+  That instance predates the fix that serves /mcp on the delivered profile — ask whoever
+  operates it to move it up a version.`);
+  }
+  if (!mcp.ok) fail(`/mcp answered HTTP ${mcp.status}.`);
+  await mcp.text();
+  ok("token accepted — your assistant can reach this workspace.");
 }
 
 async function main() {
@@ -220,8 +274,9 @@ async function main() {
   writeConfig(endpoint, token);
   await smoke(endpoint, token);
 
-  console.log("\n✅ Assistant connecté — Galy never sees your code.");
-  console.log("   Open Claude Code here: it will tell you where your practices stand.\n");
+  console.log("\n✅ Assistant connected — Galy never sees your code.");
+  console.log("   Reopen Claude Code here: a server declared while it was running is only seen");
+  console.log("   at the next start. It will then tell you where your practices stand.\n");
 }
 
 main().catch((e) => fail(e.message));
