@@ -170,9 +170,75 @@ async function runMcp(url, token, writeMode) {
     }
   }
 
+  await scanLiveWorkflowCatalog(client, liveNames);
+
   if (writeMode) {
     console.log("  --write: write exercises are intentionally not run — they mutate the workspace.");
   }
+}
+
+// The contract's vocabulary against the one the instance actually serves.
+//
+// The static check closes the repository on itself: options declared, options cited, verb enums -
+// all of it agrees, and all of it lives in the same repository reading itself. THIS check holds
+// the gap between the repository and the instance, and that gap is what produced both of the
+// day's lies: a catalogue offering `ship`/`auto_commit` that no skill read, and a divergence that
+// came through the VALUES rather than the names. A page can only offer a setting nothing honours
+// when nobody compares the two sides.
+//
+// So names are not enough. Compare values too, or the next drift arrives as `auto_ship` taking
+// on/off here and confident/always-manual there, both catalogues listing the same option name,
+// both test suites green.
+async function scanLiveWorkflowCatalog(client, liveNames) {
+  const VERB = "workflow_catalog_list";
+  if (!liveNames.has(VERB)) {
+    console.log(`  [SKIP] workflow catalog: the instance does not advertise '${VERB}' yet, so the`);
+    console.log("         contract vocabulary cannot be compared to what it really serves.");
+    return;
+  }
+
+  let served;
+  try {
+    const out = await client.callTool(VERB, {});
+    if (!out || out.success !== true) {
+      return record("workflow catalog matches the contract", false,
+        `envelope: ${JSON.stringify(out).slice(0, 160)}`);
+    }
+    const rows = out.options ?? out.catalog ?? out.workflow_options;
+    if (!Array.isArray(rows)) {
+      return record("workflow catalog matches the contract", false,
+        `no option array in the answer (keys: ${Object.keys(out).join(", ")})`);
+    }
+    served = new Map();
+    for (const row of rows) {
+      if (!row?.skill || !row?.option) continue;
+      served.set(`${row.skill}.${row.option}`, [...(row.values ?? [])].sort());
+    }
+  } catch (e) {
+    return record("workflow catalog matches the contract", false, e.message);
+  }
+
+  const declared = new Map();
+  for (const [skill, options] of Object.entries(CONTRACT.workflow_options?.options ?? {})) {
+    for (const [option, values] of Object.entries(options)) {
+      declared.set(`${skill}.${option}`, [...values].sort());
+    }
+  }
+
+  const onlyInstance = [...served.keys()].filter((k) => !declared.has(k));
+  const onlyContract = [...declared.keys()].filter((k) => !served.has(k));
+  const valueGaps = [...declared.keys()]
+    .filter((k) => served.has(k) && declared.get(k).join("|") !== served.get(k).join("|"))
+    .map((k) => `${k}: contract [${declared.get(k)}] vs instance [${served.get(k)}]`);
+
+  const ok = onlyInstance.length === 0 && onlyContract.length === 0 && valueGaps.length === 0;
+  const detail = ok
+    ? `${declared.size} options, same names and same values on both sides`
+    : [onlyInstance.length ? `served but not in the contract: ${onlyInstance.join(", ")}` : null,
+       onlyContract.length ? `in the contract but not served: ${onlyContract.join(", ")}` : null,
+       valueGaps.length ? `values differ - ${valueGaps.join("; ")}` : null]
+      .filter(Boolean).join("; ");
+  record("workflow catalog matches the contract", ok, detail);
 }
 
 // ── Live REST layer (the routes the galy CLI uses) ───────────────────────────
@@ -362,7 +428,9 @@ async function main() {
   scanWorkflowOptions();
 
   if (!token || (!mcpUrl && !restBase)) {
-    console.log("\nLive checks skipped — set GALY_ENDPOINT (or GALY_MCP_URL) and GALY_TOKEN to exercise the endpoint.\n");
+    console.log("\nLive checks skipped — set GALY_ENDPOINT (or GALY_MCP_URL) and GALY_TOKEN to exercise the endpoint.");
+    console.log("The workflow vocabulary is therefore only HALF checked: the repository agrees with");
+    console.log("itself, but nothing compared it to the catalogue the instance actually serves.\n");
     return summarize();
   }
 
