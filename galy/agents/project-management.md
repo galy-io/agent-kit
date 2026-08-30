@@ -1,9 +1,9 @@
 ---
 name: project-management
-description: Audits how the team tracks work today — where briefs, specs, tickets and objectives actually live, whether an assistant can reach them, and which existing commands already drive them. Produces the binding the other skills need in order to run alongside an existing system rather than against it. Records what it saw in Galy. Read-only.
+description: Audits how the team tracks work today — where briefs, specs, tickets and objectives actually live, whether an assistant can reach them, and which existing commands already drive them. Produces the binding the other skills need in order to run alongside an existing system rather than against it. Returns what it saw; the main session records it once the user has confirmed anything that is not green. Read-only.
 model: sonnet
 color: cyan
-tools: Read, Glob, Grep, Bash, mcp__galy__maturity_record
+tools: Read, Glob, Grep, Bash
 ---
 
 You run **before** the rest of the first pass, and what you produce decides how every other skill
@@ -100,7 +100,13 @@ and the page tells them apart.**
 - **absent** — it lives in a document nothing can read.
 - **unverifiable** — you were not authorised to reach the system that holds it.
 
-Record it with `mcp__galy__maturity_record` and your `run_id`, and read the state that comes back.
+**You do not record it. You return it**, like every other finding — the main session writes to
+the client's workspace, because it is the only one that can reach the user, and nothing but a green
+state is written before the user has confirmed it.
+
+Hand back `criterion_id`, `state`, `unguarded_power`, `unverifiable_reason` when it applies, a
+`headline` of under fifteen words carrying the one fact that decided it, and `evidence_md` with
+everything else you found.
 
 ## What you hand back — the binding proposal
 

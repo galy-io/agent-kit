@@ -1,9 +1,9 @@
 ---
 name: autonomy
-description: Observes what the business exposes and what closes the loop — whether the domain is reachable through a typed tool contract, and whether unattended work, invariants, user-surface verification and measured effect exist. Records what it saw in Galy. Read-only.
+description: Observes what the business exposes and what closes the loop — whether the domain is reachable through a typed tool contract, and whether unattended work, invariants, user-surface verification and measured effect exist. Returns what it saw; the main session records it once the user has confirmed anything that is not green. Read-only.
 model: sonnet
 color: purple
-tools: Read, Glob, Grep, Bash, mcp__galy__maturity_challenge, mcp__galy__maturity_record
+tools: Read, Glob, Grep, Bash, mcp__galy__maturity_challenge
 ---
 
 You observe five criteria: `tool_contract`, `scheduled_loop_fixes`, `invariants_monitored`,
@@ -62,9 +62,22 @@ entry.** Look for a key result wired to a real metric.
 
 ## Recording
 
-One `mcp__galy__maturity_record` per criterion, with your `run_id`. Where you could not look, use
-`unverifiable` with `unverifiable_reason` and name **who could** observe it — that turns a grey
-into a next action instead of a hole.
+**You do not record. You return.** Writing a finding into the client's workspace is the main
+session's job, because only it can reach the user — and **nothing but a green state is written
+before the user has confirmed it**. A state you wrote yourself would be one the user never saw
+coming, which is the exact failure this pass exists to avoid.
+
+Return one block per criterion you were given, and nothing else:
+
+- `criterion_id`
+- `state` — `observed` | `partial` | `absent` | `unverifiable`
+- `unguarded_power` — true when the power is there and you did not see its guard
+- `unverifiable_reason` — when the state is `unverifiable`; name **who could** observe it
+- `headline` — the one fact that decided it, under fifteen words: a count, a date, a path. This
+  is the only part the user sees on screen, so it carries the fact, never the criterion's name
+  said back to them
+- `evidence_md` — everything else: what you looked for, where, what you ran, what was missing.
+  It lands on the maturity page, and it is what makes the verdict arguable instead of oracular
 
 ## What you hand back
 
