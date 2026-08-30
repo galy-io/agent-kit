@@ -120,18 +120,25 @@ runs, and is never committed.
 Ask "quels réglages Galy sont actifs ?" and the `workflows` skill shows the table, says who decided
 each line, and links the page on your account.
 
-### The end of an onboarding sends a retrospective — if you let it
+### Nothing leaves your instance. Ever.
 
-The first pass finishes by offering to send back **what worked, what was awkward, the questions it
-could not answer, and your suggestions** — about the onboarding process itself, so it improves for
-the next team. You are asked **once**, at the end, never at the start: nobody should authorise
-sending a retrospective before knowing there is one.
+No verb in this kit sends anything out of your tenant. **Support is blind by construction**, and
+stays blind unless you hand over a link.
 
-**What never leaves**: your code, file excerpts, paths, host names, command output, secrets,
-customer names, and the observations the pass recorded — those stay in your workspace. The server
-redacts as a second net and says when it fired.
+The first pass finishes by **writing** a retrospective — what worked, what was awkward, the
+questions it could not answer, your suggestions — about the onboarding process itself. That is
+written to your own instance and nothing is asked, because writing in your own workspace asks
+nobody's permission.
 
-`Tout le temps` · `Demander à chaque fois` · `Jamais` — and `never` is honoured without argument.
+Then, separately, you are offered the one path outward there is: a **read-only, revocable link** so
+a Galy coach can read it. Nothing is pushed. The coach opens the link, or there is no link and they
+see nothing.
+
+`Tout le temps` · `Demander à chaque fois` · `Jamais` — and **absent means never**. A preference
+nobody gave is not a yes, and neither is a server that failed to answer: if the policy cannot be
+read, nothing is shared. A link already minted is revoked from the same page, after which the URL
+answers nothing.
+
 Your administrator may have decided for the whole workspace, in which case you are told so rather
 than asked a question whose answer would change nothing.
 

@@ -149,48 +149,19 @@ Four things, in this order:
 3. **The open questions**, ordered by what they unlock, phrased for a human.
 4. **A single next step**, with its duration and its risk. Not a shopping list: one step.
 
-## Then, and only then, close the loop on the process itself
+## Then, and only then, write the retrospective
 
-**After** the report is delivered — never before, and never as a condition of it — offer to send a
-short retrospective **about this onboarding** back to Galy, so the process gets better for the next
-team.
+**After** the report is delivered — never before, and never as a condition of it — write down what
+this pass was like: what worked, what rubbed, what it could not answer, and what the user suggested.
 
-### First find out whether there is anything to ask
+### It is written first, and nothing is asked
 
-`mcp__galy__workflow_policy_resolve("onboarding", "share_feedback")`.
+`mcp__galy__onboarding_retro_record(run_id, worked_md, friction_md, questions_md, suggestions_md)`.
 
-- `effective: "deny"` → send nothing, say nothing beyond one line if `decided_by` is `admin`:
-  the workspace has decided, here is the `settings_url`. **Do not ask.**
-- `effective: "allow"` → submit, and say in one line that you did and where to turn it off.
-- `effective: "ask"` → ask, once, with `AskUserQuestion`.
+**No permission is asked, because none is needed.** It is written to their own instance and it
+stays there, like everything else in this contract. Writing in your own workspace asks nobody.
 
-If the MCP does not answer, fall back to `.galy/workflow-defaults.json` under
-`onboarding.share_feedback`. If that says nothing either, ask. **Never treat an unreadable policy
-as permission.**
-
-### The question, asked once and never again
-
-Say what leaves and what never leaves *before* the choices, in one line. Then:
-
-> **Envoyer un retour à Galy sur cette prise en main ?**
-> Ce qui part : ce qui a marché, ce qui a frotté, les questions restées ouvertes, les suggestions.
-> Ce qui ne part jamais : votre code, vos extraits de fichiers, vos noms d'hôtes, vos secrets, vos
-> noms de clients, et vos constats eux-mêmes.
->
-> - **Tout le temps (recommandé)** — `always`
-> - **Demander à chaque fois** — `ask`
-> - **Jamais** — `never`
-
-Persist the canonical value with `mcp__galy__workflow_default_set("onboarding",
-"share_feedback", <value>)` and rewrite the mirror. **Persist the value, never the label.**
-
-`never` is honoured without a second question and without an argument. A retrospective extracted
-from someone who did not want to give it is worth nothing to anyone.
-
-### What you send
-
-`mcp__galy__onboarding_feedback_submit(run_id, worked_md, friction_md, questions_md,
-suggestions_md)`, and each field carries **only** what its name says, about **the process**:
+Each field carries **only** what its name says, about **the process**:
 
 - `worked_md` — what genuinely helped: a question that unlocked something, an agent that found
   what nobody expected.
@@ -198,15 +169,53 @@ suggestions_md)`, and each field carries **only** what its name says, about **th
 - `questions_md` — what the pass could not answer and should have been able to.
 - `suggestions_md` — what would have made it better, in the user's own words where they gave them.
 
-**Nothing else may appear in those four fields.** No code, no file excerpt, no path, no host name,
-no command output, no secret, no customer or product name, and none of the observations you
-recorded — those belong to the workspace and stay in it. If a piece of feedback cannot be written
-without one of those, it does not go: rewrite it at the level of the process, or drop it.
+Keep it about the process even though nothing leaves. A retrospective full of their own code is a
+retrospective nobody will ever agree to share, and it is the sharing that makes it useful to them.
 
-The server redacts as well, and the answer tells you (`redacted`). That is a net, not your
-discipline — a redaction that fires means you already sent something you should not have.
+### Then offer to share it — and only offer
 
-Say in one line what you sent and where it can be turned off (`settings_url`). Then stop.
+`mcp__galy__workflow_policy_resolve("onboarding", "share_retro_with_coach")`.
+
+- `effective: "deny"` → do not share, do not ask. If `decided_by` is `admin`, one line: the
+  workspace has decided, here is the `settings_url`.
+- `effective: "allow"` → share, and hand over the link.
+- `effective: "ask"` → ask, once, with `AskUserQuestion`.
+
+**Absent means never. Silence means never.** If the preference was never given, if the policy
+cannot be read, or if the MCP does not answer at all, **nothing is shared** — you record the
+retrospective and stop there. A default that shared would turn every timeout into a disclosure,
+and there is no version of that which is acceptable. Never read an unanswered question as a yes.
+
+### The question, asked once
+
+Say what sharing actually does *before* the choices, in one line: it mints a read-only link the
+coach opens, revocable at any moment. Nothing is pushed, nothing is sent, and without this gesture
+support stays blind — which is how the product is built.
+
+> **Partager cette rétrospective avec votre coach Galy ?**
+> Ce que ça fait : un lien en lecture seule, révocable, que votre coach ouvre pour lire cette
+> rétrospective. Rien n'est poussé, rien ne part de votre instance sans ce geste, et la
+> rétrospective reste chez vous dans tous les cas.
+>
+> - **Tout le temps (recommandé)** — `always`
+> - **Demander à chaque fois** — `ask`
+> - **Jamais** — `never`
+
+Persist the canonical value with `mcp__galy__workflow_default_set("onboarding",
+"share_retro_with_coach", <value>)` and rewrite the mirror. **Persist the value, never the label.**
+
+`never` is honoured without a second question and without an argument.
+
+### When a link is minted
+
+`mcp__galy__onboarding_retro_share(retro_id)` returns `share_url`, or `not_shared_reason` when the
+policy refused or no preference was ever given.
+
+**Give the link to the user**, in full, and say in the same breath how to take it back: the link is
+revoked from the same page as their other share links, and once revoked the URL answers nothing.
+A link handed over without its off switch is not a shared document, it is a leak with a nice name.
+
+Then stop.
 
 ## The tone
 
