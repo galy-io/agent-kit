@@ -366,7 +366,7 @@
     {
       "name": "onboarding_feedback_submit",
       "kind": "write",
-      "description": "Send a NON-TECHNICAL retrospective about the onboarding process itself, so it improves for the next team. Gated by workflow_policy_resolve('onboarding','share_feedback'). The four fields carry process feedback only: never code, file excerpts, paths, host names, command output, secrets, customer or product names, nor any recorded observation - those stay in the workspace. The server redacts as a net, and says so in the answer; a redaction that fires means something was sent that should not have been.",
+      "description": "Send a NON-TECHNICAL retrospective about the onboarding process itself, so it improves for the next team. Gated by workflow_policy_resolve('onboarding','share_feedback'). The four fields carry process feedback only: never code, file excerpts, paths, host names, command output, secrets, customer or product names, nor any recorded observation - those stay in the workspace. The server redacts as a net, and says so in the answer; a redaction that fires means something was sent that should not have been. LEAVES YOUR WORKSPACE: this is the one verb in this contract that does, which is why it is gated by a policy and redacted server-side. Anything about YOUR work \u2014 a learning, a rule to encode \u2014 belongs to retro_suggestion_add, which stays in.",
       "params": [
         { "name": "run_id", "type": "int", "required": true, "description": "The maturity run this pass opened." },
         { "name": "worked_md", "type": "string", "required": false, "description": "What genuinely helped, about the process." },
@@ -380,7 +380,7 @@
     {
       "name": "retro_suggestion_add",
       "kind": "write",
-      "description": "Post an end-of-run retrospective suggestion (status pending) — a durable learning about how the assistant should work. Targets the plugin's own skills or your CLAUDE.md, never your product code. The summary is the lesson + the rule to encode.",
+      "description": "Post an end-of-run retrospective suggestion (status pending) — a durable learning about how the assistant should work. Targets the plugin's own skills or your CLAUDE.md, never your product code. The summary is the lesson + the rule to encode. STAYS IN YOUR WORKSPACE: it is written to your own Galy tenant and never leaves it. The verb that leaves is onboarding_feedback_submit, and it carries nothing about your work.",
       "params": [
         { "name": "source", "type": "string", "required": true, "description": "Originating skill, e.g. feature_implement | ship | feature_followup" },
         { "name": "target_kind", "type": "string", "required": true, "description": "instruction | skill | command | doc" },
