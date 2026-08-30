@@ -70,6 +70,19 @@
       "returns": { "success": "bool", "objectives": "[objective]" }
     },
     {
+      "name": "strategy_create_objective",
+      "kind": "write",
+      "description": "Create a strategy objective, at the root of a period or under a parent. The audit uses it to give its work a home when the team has none yet — and asks before calling it: an objective is the team's strategy, not the audit's own output.",
+      "params": [
+        { "name": "title", "type": "string", "required": true, "description": "Objective title, in the user's language." },
+        { "name": "period_id", "type": "int", "required": false, "description": "Period it belongs to. Defaults to the current one." },
+        { "name": "parent_objective_id", "type": "int", "required": false, "description": "Parent objective. Null for a root objective — this is what makes a sub-objective a single call." },
+        { "name": "description_md", "type": "string", "required": false },
+        { "name": "owner_user_id", "type": "int", "required": false }
+      ],
+      "returns": { "success": "bool", "objective": "objective" }
+    },
+    {
       "name": "strategy_get_objective_breadcrumb",
       "kind": "read",
       "description": "Return the parent chain of an objective from root to leaf, one node per level. Use it to build the objective header of a spec without loading the whole strategy.",
