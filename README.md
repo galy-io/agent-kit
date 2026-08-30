@@ -109,38 +109,38 @@ how to tell them apart.
 No workflow is edited, no command renamed, no `.mcp.json` touched, and **the pull request is never
 merged**. Your review is the point.
 
-## What the skills may do on your behalf
+## What the skills do on their own, and what they stop to ask
 
-Two layers decide it, and the top one wins: your **administrator's policy** for the whole
-workspace — `allow`, `deny`, or `user_choice`, set per skill and per option — and, under
-`user_choice`, **your own preference**. Both are on your Galy account, so they follow you from one
-checkout to the next; a local `.galy/workflow-defaults.json` mirrors the user layer for headless
-runs, and is never committed.
+Every preference answers one question: when a skill reaches a step it could take unattended —
+committing a reviewed change, opening the pull request, moving to the next phase — does it take it,
+or does it stop and ask you?
+
+Two layers decide, and the top one wins: your **administrator's policy** for the whole workspace —
+`allow`, `deny`, or `user_choice`, set per skill and per option — and, under `user_choice`, **your
+own preference**. Both live on your Galy account, so they follow you from one checkout to the next;
+a local `.galy/workflow-defaults.json` mirrors the user layer for headless runs, and is never
+committed.
 
 Ask "quels réglages Galy sont actifs ?" and the `workflows` skill shows the table, says who decided
-each line, and links the page on your account.
+each line, and links the page on your account. `ask` is always a real answer, never a fallback: a
+developer who wants the question every time has decided to stay in the loop.
 
-### Nothing leaves your instance. Ever.
+None of it makes the kit merge or deploy. It **stops at "PR ready"** — a documented boundary, not a
+gap — and the merge stays with the process you already have.
+
+### Nothing leaves your instance
 
 No verb in this kit sends anything out of your tenant. **Support is blind by construction**, and
-stays blind unless you hand over a link.
+nothing in the contract can change that.
 
 The first pass finishes by **writing** a retrospective — what worked, what was awkward, the
-questions it could not answer, your suggestions — about the onboarding process itself. That is
+questions it could not answer, your suggestions — about the onboarding process itself. It is
 written to your own instance and nothing is asked, because writing in your own workspace asks
 nobody's permission.
 
-Then, separately, you are offered the one path outward there is: a **read-only, revocable link** so
-a Galy coach can read it. Nothing is pushed. The coach opens the link, or there is no link and they
-see nothing.
-
-`Tout le temps` · `Demander à chaque fois` · `Jamais` — and **absent means never**. A preference
-nobody gave is not a yes, and neither is a server that failed to answer: if the policy cannot be
-read, nothing is shared. A link already minted is revoked from the same page, after which the URL
-answers nothing.
-
-Your administrator may have decided for the whole workspace, in which case you are told so rather
-than asked a question whose answer would change nothing.
+Whether that instance forwards anything to Galy is an **instance setting your administrator holds**,
+disabled by default. It is not a question put to the developer at the terminal, and no skill
+pretends otherwise.
 
 ## What you get
 

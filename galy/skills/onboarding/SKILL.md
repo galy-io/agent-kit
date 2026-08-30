@@ -154,12 +154,12 @@ Four things, in this order:
 **After** the report is delivered — never before, and never as a condition of it — write down what
 this pass was like: what worked, what rubbed, what it could not answer, and what the user suggested.
 
-### It is written first, and nothing is asked
-
 `mcp__galy__onboarding_retro_record(run_id, worked_md, friction_md, questions_md, suggestions_md)`.
 
-**No permission is asked, because none is needed.** It is written to their own instance and it
-stays there, like everything else in this contract. Writing in your own workspace asks nobody.
+**Nothing is asked, because nothing is theirs to decide.** It is written to their own instance and
+stays there, like everything else this contract writes. Writing in your own workspace asks nobody's
+permission — and whether that instance forwards anything to Galy is a setting their administrator
+holds, not a question for the person in front of you.
 
 Each field carries **only** what its name says, about **the process**:
 
@@ -169,53 +169,20 @@ Each field carries **only** what its name says, about **the process**:
 - `questions_md` — what the pass could not answer and should have been able to.
 - `suggestions_md` — what would have made it better, in the user's own words where they gave them.
 
-Keep it about the process even though nothing leaves. A retrospective full of their own code is a
-retrospective nobody will ever agree to share, and it is the sharing that makes it useful to them.
+Keep it about the process. Never code, file excerpts, paths, host names, command output, secrets,
+customer names, nor the observations you recorded — those belong to the workspace and stay in it.
 
-### Then offer to share it — and only offer
+### Say one line, and do not turn it into a choice
 
-`mcp__galy__workflow_policy_resolve("onboarding", "share_retro_with_coach")`.
+The user has no decision to make here. **Do not ask, do not offer, do not hint at a preference** —
+implying a control they do not have is worse than saying nothing at all. One line, then stop:
 
-- `effective: "deny"` → do not share, do not ask. If `decided_by` is `admin`, one line: the
-  workspace has decided, here is the `settings_url`.
-- `effective: "allow"` → share, and hand over the link.
-- `effective: "ask"` → ask, once, with `AskUserQuestion`.
+> Rétrospective de cette prise en main écrite dans votre instance : qu'elle remonte ou non à Galy
+> est un réglage d'instance que votre administrateur tient, désactivé par défaut.
 
-**Absent means never. Silence means never.** If the preference was never given, if the policy
-cannot be read, or if the MCP does not answer at all, **nothing is shared** — you record the
-retrospective and stop there. A default that shared would turn every timeout into a disclosure,
-and there is no version of that which is acceptable. Never read an unanswered question as a yes.
-
-### The question, asked once
-
-Say what sharing actually does *before* the choices, in one line: it mints a read-only link the
-coach opens, revocable at any moment. Nothing is pushed, nothing is sent, and without this gesture
-support stays blind — which is how the product is built.
-
-> **Partager cette rétrospective avec votre coach Galy ?**
-> Ce que ça fait : un lien en lecture seule, révocable, que votre coach ouvre pour lire cette
-> rétrospective. Rien n'est poussé, rien ne part de votre instance sans ce geste, et la
-> rétrospective reste chez vous dans tous les cas.
->
-> - **Tout le temps (recommandé)** — `always`
-> - **Demander à chaque fois** — `ask`
-> - **Jamais** — `never`
-
-Persist the canonical value with `mcp__galy__workflow_default_set("onboarding",
-"share_retro_with_coach", <value>)` and rewrite the mirror. **Persist the value, never the label.**
-
-`never` is honoured without a second question and without an argument.
-
-### When a link is minted
-
-`mcp__galy__onboarding_retro_share(retro_id)` returns `share_url`, or `not_shared_reason` when the
-policy refused or no preference was ever given.
-
-**Give the link to the user**, in full, and say in the same breath how to take it back: the link is
-revoked from the same page as their other share links, and once revoked the URL answers nothing.
-A link handed over without its off switch is not a shared document, it is a leak with a nice name.
-
-Then stop.
+That is the whole of it. No paragraph, no link to a settings page they cannot change, no "would you
+like to…". If they ask about it, answer plainly: the setting lives in the instance configuration,
+their administrator decides, and by default nothing leaves.
 
 ## The tone
 

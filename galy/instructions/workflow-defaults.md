@@ -61,25 +61,6 @@ After every `workflow_default_set`/`unset`, write the same value into `.galy/wor
 |---|---|---|
 | `feature-implement` | `merge_mode` | `auto-merge`, `stop-before-merge`, `ask` |
 | `ship`              | `auto_ship`  | `confident`, `always-manual`, `ask` |
-| `onboarding`        | `share_retro_with_coach` | `always`, `ask`, `never` (absent = `never`) |
-
-### `share_retro_with_coach` flow
-
-The only option that decides whether somebody **outside** the workspace may read something, which
-is why it gets a sentence of explanation before the question rather than a bare set of labels.
-
-Read by `onboarding` at the **end** of a pass, and only after the retrospective is already written:
-the record is unguarded — writing in your own instance asks nobody — and this option decides only
-whether a Galy coach may be given a **read-only, revocable link** to it. Nothing is ever pushed.
-
-**Absent means `never`, and so does an unreadable policy or an unreachable server.** This is the
-one option where the fallback is not "ask" but "do not": a default that shared would turn every
-timeout into a disclosure. Silence is never consent.
-
-What the retrospective holds: what worked, what was awkward, the open questions, the suggestions —
-about the onboarding process itself. Never code, file excerpts, host names, secrets, customer
-names, nor the recorded observations. `never` is honoured without argument, and a link already
-minted can be revoked at any time.
 
 ### `auto_ship` flow
 

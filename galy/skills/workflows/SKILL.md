@@ -1,13 +1,17 @@
 ---
 name: workflows
-description: See and change what Galy's skills are allowed to do on your behalf — merge mode, hands-off shipping, and whether an onboarding retrospective may be shared with your Galy coach through a revocable read-only link. Fires on "quels réglages Galy sont actifs ?", "arrête de partager avec le coach", "change mon mode de fusion", "galy settings". Shows what your administrator decided and what is left to you, and points at the page on your Galy account.
+description: See and change what Galy's skills do on their own and what they stop to ask you — commit and open the pull request unattended, or pause for your check first. Fires on "quels réglages Galy sont actifs ?", "arrête de committer tout seul", "demande-moi avant d'ouvrir la PR", "galy settings". Shows what your administrator decided for the whole workspace and what is left to you, and points at the page on your Galy account.
 ---
 
-# workflows — what the skills may do on your behalf
+# workflows — act, or stop and ask
 
-Every preference here answers the same question: **when a skill reaches a decision point, does it
-act, stop, or ask?** They are stored on your Galy account, not in this repository, so they follow
-you from one checkout to the next.
+Every preference here answers the same question: **when a skill reaches a step it could take on its
+own, does it take it, or does it stop and ask you?** Committing a reviewed change, opening the pull
+request, moving to the next phase — each is a point where a developer wants a different answer on a
+Friday afternoon than on a first day in a new repository.
+
+They are stored on your Galy account, not in this repository, so they follow you from one checkout
+to the next.
 
 ## Two layers, and the top one wins
 
@@ -35,9 +39,13 @@ the policy side. Render one short table — option, effective value, who decided
 
 | Skill | Option | What it decides |
 |---|---|---|
-| `feature-implement` | `merge_mode` | whether the loop pauses before handing the PR to your merge process |
-| `ship` | `auto_ship` | whether a safe, high-confidence change opens its PR without asking |
-| `onboarding` | `share_retro_with_coach` | whether the retrospective of a pass may be shared with your Galy coach, by link |
+| `ship` | `auto_ship` | whether a safe, high-confidence change is committed and its pull request opened without stopping for you, or whether the human gate fires every time |
+| `feature-implement` | `merge_mode` | whether the loop hands the ready pull request straight to **your** merge process, or stops at "PR ready" for your review |
+
+**Neither of these makes the kit merge or deploy anything.** The kit stops at "PR ready" — that is a
+documented boundary, not a gap — and `merge_mode` only decides whether the loop pauses before
+handing the pull request over to the process you already have. An option that merged for you would
+be a lie about what this kit does.
 
 ## Changing one
 
@@ -49,31 +57,20 @@ silently stops matching.
 If the policy for that option is `allow` or `deny`, setting a user value changes nothing: say that
 instead of writing a preference that will never be read.
 
-## `share_retro_with_coach`, and why it is the one worth explaining
+## The value that always exists
 
-Every other option decides what a skill does inside the workspace. This one decides whether
-somebody **outside** it may read one document, so it is the only one where the user deserves a
-sentence rather than a value.
+Every option accepts `ask`, and it is not a fallback — it is a real answer. A developer who wants
+the question every time is not undecided; they have decided to stay in the loop. Never nudge them
+off it, and never treat a stored `ask` as an absent preference.
 
-- **The retrospective is always written**, whatever this is set to, and it stays in the instance.
-  Nothing here decides whether it exists — only whether a coach may read it.
-- **Sharing mints a read-only, revocable link.** Nothing is pushed and nothing is sent: the coach
-  opens the link, or there is no link and they see nothing. Support is blind by construction, and
-  stays blind until someone hands over a link.
-- **What the retrospective holds**: what worked, what was awkward, the open questions, the
-  suggestions — about *the onboarding process*. Never code, file excerpts, host names, secrets,
-  customer names, nor the observations the pass recorded.
-
-Values are `always`, `ask`, `never`, and **absent means never** — a preference nobody gave is not a
-yes. Anyone may change it at any time, and `never` is honoured without argument.
-
-Revoking is the other half, and it is worth saying in the same breath: a shared link is deactivated
-from the same page, and once revoked the URL answers nothing. Someone who shared last month may
-take it back today without asking anyone.
+An option nobody has ever set is a different thing: ask both questions in one turn — what to do
+this run, and what to do from now on — and persist only the second. The pattern is in
+`${CLAUDE_PLUGIN_ROOT}/instructions/workflow-defaults.md`.
 
 ## The page on their account
 
-Everything here is also visible and editable at the `settings_url` the resolve verb returns. Say
-it once, at the end, as a link — not as a paragraph. The point of this skill is that a developer
-never has to leave the terminal to answer "what is this thing allowed to do?", and the page is for
-the times they want to see it all at once, or for the administrator setting policy for everyone.
+Everything here is also visible and editable at the `settings_url` the resolve verb returns, which
+is also where an administrator sets the workspace policy. Say it once, at the end, as a link — not
+as a paragraph. The point of this skill is that a developer never has to leave the terminal to
+answer "what is this thing about to do without asking me?", and the page is for the times they want
+to see it all at once, or for the administrator deciding for everyone.
