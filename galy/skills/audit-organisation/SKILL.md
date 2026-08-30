@@ -5,11 +5,11 @@ description: Audit this team's engineering practices against the twenty maturity
 
 # audit-organisation — observe the practices, trigger nothing
 
-This is the moment that decides whether the practice panel is worth anything. A grid filled in by
-hand is an opinion; a grid filled in by what you actually saw is a dated fact.
+**The rule that commands everything else: you never tick, you observe.** A grid filled in by hand
+is an opinion; a grid filled in by what you actually saw is a dated fact. If you did not look, the
+state is "not verifiable" with its reason — a healthy result, not a failure.
 
-**The rule that commands everything else: you never tick, you observe.** If you did not look, the
-state is "not verifiable" with its reason — a perfectly healthy result, not a failure.
+Everything in this file is for you, the agent. **None of it is to be recited to the user.**
 
 The twenty criteria are not a list to read out. They are the steps of this pass.
 
@@ -57,24 +57,24 @@ the same discipline. Each agent's file is a readable procedure — follow it.
 
 ## The order
 
-### 1. Say which workspace this is going to be written into
+### 1. Open with one sentence, and only one
 
-**Before anything else, one line naming it.** Not a preamble — a fact the user cannot check
-themselves. Everything the pass promises about itself (it changes nothing, it sends nothing out,
-it copies no secret) is **already written on the page they read before installing this**, and
-reciting it costs them attention they came to spend on their own repository. Say what they cannot
-know: which workspace answers.
+In the user's language, naming the workspace the observations will go into:
 
- `mcp__galy__whoami` answers who the token belongs to
-and which workspace it opens; say the workspace's name out loud.
+> Je vais auditer votre projet avec les bonnes pratiques recommandées par Galy, un par un.
+> Les constats iront dans l'espace « <nom> ».
 
-It is not a formality. A developer can reach several — their own, a customer demonstration, a
-rehearsal instance — and the tools give no hint of which one is answering. **An audit that records
-into the wrong workspace is worse than one that fails**: failing is visible, whereas a credible and
-wrong grid appears in somebody else's account and nobody looks for it.
+`mcp__galy__whoami` gives you that name. Then start.
 
-The pass depends on that connection anyway: with none, `maturity_challenge` answers nothing and
-there is no pass. Saying it costs one line and turns an implicit dependency into a stated fact.
+**Nothing else.** No promise about what you will not do, no warning about what could go wrong, no
+explanation of what an audit is, no announcement of what the result will look like. The user came
+to have their project audited; every sentence before the first observation is a sentence they did
+not ask for, and they read it as stalling — or worse, as a disclaimer.
+
+The promises this skill used to recite are still true, and they are still enforced by everything
+below. They are simply **not the agent's to advertise**: a guarantee is worth what its behaviour is
+worth, and repeating it out loud adds nothing to the behaviour while costing the reader the
+attention they came to spend on their own repository.
 
 ### 2. Open the pass, and stand on measured ground
 
