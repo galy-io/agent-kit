@@ -149,6 +149,65 @@ Four things, in this order:
 3. **The open questions**, ordered by what they unlock, phrased for a human.
 4. **A single next step**, with its duration and its risk. Not a shopping list: one step.
 
+## Then, and only then, close the loop on the process itself
+
+**After** the report is delivered — never before, and never as a condition of it — offer to send a
+short retrospective **about this onboarding** back to Galy, so the process gets better for the next
+team.
+
+### First find out whether there is anything to ask
+
+`mcp__galy__workflow_policy_resolve("onboarding", "share_feedback")`.
+
+- `effective: "deny"` → send nothing, say nothing beyond one line if `decided_by` is `admin`:
+  the workspace has decided, here is the `settings_url`. **Do not ask.**
+- `effective: "allow"` → submit, and say in one line that you did and where to turn it off.
+- `effective: "ask"` → ask, once, with `AskUserQuestion`.
+
+If the MCP does not answer, fall back to `.galy/workflow-defaults.json` under
+`onboarding.share_feedback`. If that says nothing either, ask. **Never treat an unreadable policy
+as permission.**
+
+### The question, asked once and never again
+
+Say what leaves and what never leaves *before* the choices, in one line. Then:
+
+> **Envoyer un retour à Galy sur cette prise en main ?**
+> Ce qui part : ce qui a marché, ce qui a frotté, les questions restées ouvertes, les suggestions.
+> Ce qui ne part jamais : votre code, vos extraits de fichiers, vos noms d'hôtes, vos secrets, vos
+> noms de clients, et vos constats eux-mêmes.
+>
+> - **Tout le temps (recommandé)** — `always`
+> - **Demander à chaque fois** — `ask`
+> - **Jamais** — `never`
+
+Persist the canonical value with `mcp__galy__workflow_default_set("onboarding",
+"share_feedback", <value>)` and rewrite the mirror. **Persist the value, never the label.**
+
+`never` is honoured without a second question and without an argument. A retrospective extracted
+from someone who did not want to give it is worth nothing to anyone.
+
+### What you send
+
+`mcp__galy__onboarding_feedback_submit(run_id, worked_md, friction_md, questions_md,
+suggestions_md)`, and each field carries **only** what its name says, about **the process**:
+
+- `worked_md` — what genuinely helped: a question that unlocked something, an agent that found
+  what nobody expected.
+- `friction_md` — where the pass stalled, asked a bad question, or wasted the user's time.
+- `questions_md` — what the pass could not answer and should have been able to.
+- `suggestions_md` — what would have made it better, in the user's own words where they gave them.
+
+**Nothing else may appear in those four fields.** No code, no file excerpt, no path, no host name,
+no command output, no secret, no customer or product name, and none of the observations you
+recorded — those belong to the workspace and stay in it. If a piece of feedback cannot be written
+without one of those, it does not go: rewrite it at the level of the process, or drop it.
+
+The server redacts as well, and the answer tells you (`redacted`). That is a net, not your
+discipline — a redaction that fires means you already sent something you should not have.
+
+Say in one line what you sent and where it can be turned off (`settings_url`). Then stop.
+
 ## The tone
 
 You challenge, you do not judge. The difference fits in one sentence: "your quality gate has

@@ -109,15 +109,42 @@ how to tell them apart.
 No workflow is edited, no command renamed, no `.mcp.json` touched, and **the pull request is never
 merged**. Your review is the point.
 
+## What the skills may do on your behalf
+
+Two layers decide it, and the top one wins: your **administrator's policy** for the whole
+workspace — `allow`, `deny`, or `user_choice`, set per skill and per option — and, under
+`user_choice`, **your own preference**. Both are on your Galy account, so they follow you from one
+checkout to the next; a local `.galy/workflow-defaults.json` mirrors the user layer for headless
+runs, and is never committed.
+
+Ask "quels réglages Galy sont actifs ?" and the `workflows` skill shows the table, says who decided
+each line, and links the page on your account.
+
+### The end of an onboarding sends a retrospective — if you let it
+
+The first pass finishes by offering to send back **what worked, what was awkward, the questions it
+could not answer, and your suggestions** — about the onboarding process itself, so it improves for
+the next team. You are asked **once**, at the end, never at the start: nobody should authorise
+sending a retrospective before knowing there is one.
+
+**What never leaves**: your code, file excerpts, paths, host names, command output, secrets,
+customer names, and the observations the pass recorded — those stay in your workspace. The server
+redacts as a second net and says when it fired.
+
+`Tout le temps` · `Demander à chaque fois` · `Jamais` — and `never` is honoured without argument.
+Your administrator may have decided for the whole workspace, in which case you are told so rather
+than asked a question whose answer would change nothing.
+
 ## What you get
 
-Fourteen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
+Fifteen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
 
 | Skill | What it does |
 |---|---|
 | `onboarding` | The first pass: audit how you already track work, open the adapting pull request, observe the twenty criteria, record what was seen. |
 | `adapt` | Turn the kit's generic skills into skills bound to your environment, as a pull request. Never overwrites, never merges. |
 | `connect` | Wire a repository to your workspace, or diagnose a connection that answers nothing. |
+| `workflows` | See and change what the skills may do on your behalf — and what your administrator decided for everyone. |
 | `bug-fix` | A bug from report to pull request: reproduce first, fix the cause, prove it on the user's own path, leave a follow-up check. |
 | `strategy` | Explore your objectives tree (read-only) and map work to the objective it serves. |
 | `feature-brief` | Frame a business need into a brief — problem, vision, user stories, success criteria. |
@@ -157,8 +184,8 @@ galy/
   .claude-plugin/plugin.json      # plugin manifest
   hooks/hooks.json                # SessionStart — what makes it start on its own
   hooks/session-start.mjs         # offline: decides whether Galy has anything to say here
-  agents/<name>.md                # the 5 subject agents the first pass dispatches
-  skills/<name>/SKILL.md          # the 12 skills
+  agents/<name>.md                # the 6 subject agents the first pass dispatches
+  skills/<name>/SKILL.md          # the 15 skills
   instructions/                   # shared conventions the skills reference
   contract/pm-v1.json             # the project-management tool + REST contract
   contract/conformance/           # the outward-only conformance suite (MCP + REST)

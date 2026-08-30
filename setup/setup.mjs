@@ -9,8 +9,9 @@
 //   b) registers the Galy MCP endpoint for THIS project, with the address and the token
 //      written literally into the local scope — so the connection does not depend on an
 //      environment variable that only one launcher knows how to set;
-//   c) writes .galy/config.json { endpoint, token } for the `galy` CLI, and makes sure it
-//      is gitignored — the token never lands in a committable file;
+//   c) writes .galy/config.json { endpoint, token } for the `galy` CLI, and makes sure the
+//      whole .galy/ directory is gitignored — neither the token nor the workflow mirror, which
+//      carries a consent decision, ever lands in a committable file;
 //   d) smoke-tests the endpoint (GET /api/pm/search?q=ping) with the token.
 //
 // Why the local scope and not an env var. The kit used to ship a .mcp.json holding one
@@ -28,7 +29,12 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync } fr
 import { join } from "node:path";
 
 const MARKETPLACE = "galy-io/claude-kit";
-const GITIGNORE_LINE = ".galy/config.json";
+// The whole directory, not just config.json. `.galy/` also holds workflow-defaults.json, which
+// now carries a consent decision — whether the end of an onboarding sends a retrospective back
+// to Galy. A per-file ignore left that one tracked, so one developer's answer would have been
+// committed and applied to everyone who cloned. Ignoring the directory is the only version of
+// this that stays correct as the directory grows.
+const GITIGNORE_LINE = ".galy/";
 
 // How the Claude CLI is spelled depends on how it was installed, and guessing wrong is not a
 // loud failure: the two steps that matter — installing the plugin and registering the MCP
@@ -168,17 +174,19 @@ function writeConfig(endpoint, token) {
   const hasGit = existsSync(join(process.cwd(), ".git"));
   if (existsSync(gitignore)) {
     const body = readFileSync(gitignore, "utf8");
+    // Only a directory-wide rule counts. An older `.galy/config.json` line is NOT enough: it
+    // leaves every other file in there tracked, which is how the mirror would get committed.
     const ignored = body.split(/\r?\n/).some((l) => {
       const t = l.trim();
-      return t === GITIGNORE_LINE || t === ".galy" || t === ".galy/";
+      return t === ".galy" || t === ".galy/" || t === "/.galy" || t === "/.galy/";
     });
-    if (ignored) ok(".galy/config.json already gitignored.");
+    if (ignored) ok(".galy/ already gitignored.");
     else { appendFileSync(gitignore, `${body.endsWith("\n") ? "" : "\n"}${GITIGNORE_LINE}\n`); ok(`added ${GITIGNORE_LINE} to .gitignore.`); }
   } else if (hasGit) {
     writeFileSync(gitignore, `${GITIGNORE_LINE}\n`, "utf8");
     ok(`created .gitignore with ${GITIGNORE_LINE}.`);
   } else {
-    warn("no .gitignore and no git repo here — make sure .galy/config.json is never committed.");
+    warn("no .gitignore and no git repo here — make sure nothing in .galy/ is ever committed.");
   }
 }
 

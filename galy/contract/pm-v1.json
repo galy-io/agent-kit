@@ -282,6 +282,17 @@
     },
 
     {
+      "name": "workflow_policy_resolve",
+      "kind": "read",
+      "description": "Collapse the workspace policy and the user's preference for one skill+option into a single answer, and say who decided. The administrator's policy (allow | deny | user_choice) outranks the user's value; a skill must call this before offering any choice, or it offers a control the user may not have. An unreadable policy is never permission.",
+      "params": [
+        { "name": "skill", "type": "string", "required": true, "description": "Skill name without the leading slash, e.g. 'onboarding'." },
+        { "name": "option", "type": "string", "required": true, "description": "Option name, e.g. 'share_feedback'." }
+      ],
+      "returns": { "success": "bool", "effective": "allow | deny | ask", "decided_by": "admin | user | default", "admin_policy": "allow | deny | user_choice | null", "user_value": "string | null", "settings_url": "string (the page on the user's Galy account where both layers are visible)" }
+    },
+
+    {
       "name": "workflow_default_get_all",
       "kind": "read",
       "description": "Return every workflow preference stored for the current user, as {skill, option, value}. Skills read this once at the start of a run; empty means use the skill's built-in default.",
@@ -350,6 +361,20 @@
         { "name": "isActive", "type": "bool", "required": false }
       ],
       "returns": { "success": "bool" }
+    },
+
+    {
+      "name": "onboarding_feedback_submit",
+      "kind": "write",
+      "description": "Send a NON-TECHNICAL retrospective about the onboarding process itself, so it improves for the next team. Gated by workflow_policy_resolve('onboarding','share_feedback'). The four fields carry process feedback only: never code, file excerpts, paths, host names, command output, secrets, customer or product names, nor any recorded observation - those stay in the workspace. The server redacts as a net, and says so in the answer; a redaction that fires means something was sent that should not have been.",
+      "params": [
+        { "name": "run_id", "type": "int", "required": true, "description": "The maturity run this pass opened." },
+        { "name": "worked_md", "type": "string", "required": false, "description": "What genuinely helped, about the process." },
+        { "name": "friction_md", "type": "string", "required": false, "description": "Where the pass stalled, asked a bad question, or wasted time." },
+        { "name": "questions_md", "type": "string", "required": false, "description": "What the pass could not answer and should have been able to." },
+        { "name": "suggestions_md", "type": "string", "required": false, "description": "What would have made it better, in the user's own words where they gave them." }
+      ],
+      "returns": { "success": "bool", "id": "int", "forwarded": "bool (whether it left this instance for Galy, as a declared outbound flow)", "redacted": "bool" }
     },
 
     {
