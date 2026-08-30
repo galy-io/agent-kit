@@ -189,56 +189,84 @@ async function runMcp(url, token, writeMode) {
 // So names are not enough. Compare values too, or the next drift arrives as `auto_ship` taking
 // on/off here and confident/always-manual there, both catalogues listing the same option name,
 // both test suites green.
+//
+// WHAT THIS CHECK DOES NOT SEE. It compares LISTS. It cannot tell whether a value the instance
+// advertises would actually be accepted on the way in - a value announced and then refused at
+// write time is a drift of BEHAVIOUR, and no reading of a catalogue reveals it. That one is held
+// on the product side by `EveryAnsweredValueIsOneTheInstanceWouldAccept`, and it belongs there:
+// proving it requires writing, and this check writes nothing, ever. Do not extend it to try. A
+// check that lets its reader believe it verifies more than it does is the false comfort this
+// whole suite exists to remove.
 async function scanLiveWorkflowCatalog(client, liveNames) {
   const VERB = "workflow_catalog_list";
+  const CHECK = "workflow catalog matches the contract";
   if (!liveNames.has(VERB)) {
     console.log(`  [SKIP] workflow catalog: the instance does not advertise '${VERB}' yet, so the`);
     console.log("         contract vocabulary cannot be compared to what it really serves.");
     return;
   }
 
+  // The field name is read strictly, on purpose. A reader that also accepted `options` or
+  // `catalog` would happily digest a future version that renamed the field, compare an empty list
+  // against an empty list, and report "aligned" having compared nothing at all.
   let served;
   try {
     const out = await client.callTool(VERB, {});
     if (!out || out.success !== true) {
-      return record("workflow catalog matches the contract", false,
-        `envelope: ${JSON.stringify(out).slice(0, 160)}`);
+      return record(CHECK, false, `envelope: ${JSON.stringify(out).slice(0, 160)}`);
     }
-    const rows = out.options ?? out.catalog ?? out.workflow_options;
-    if (!Array.isArray(rows)) {
-      return record("workflow catalog matches the contract", false,
-        `no option array in the answer (keys: ${Object.keys(out).join(", ")})`);
+    if (!Array.isArray(out.workflow_options)) {
+      return record(CHECK, false,
+        `no 'workflow_options' array in the answer (keys: ${Object.keys(out).join(", ")})`);
     }
     served = new Map();
-    for (const row of rows) {
+    for (const row of out.workflow_options) {
       if (!row?.skill || !row?.option) continue;
-      served.set(`${row.skill}.${row.option}`, [...(row.values ?? [])].sort());
+      served.set(`${row.skill}.${row.option}`, {
+        values: new Set(row.values ?? []),
+        fallback: row.default_when_unset,
+      });
     }
   } catch (e) {
-    return record("workflow catalog matches the contract", false, e.message);
+    return record(CHECK, false, e.message);
   }
 
   const declared = new Map();
   for (const [skill, options] of Object.entries(CONTRACT.workflow_options?.options ?? {})) {
     for (const [option, values] of Object.entries(options)) {
-      declared.set(`${skill}.${option}`, [...values].sort());
+      declared.set(`${skill}.${option}`, new Set(values));
     }
   }
+
+  // Sets, never sequences. `values` are canonical strings in catalogue order, and the day someone
+  // reorders that catalogue an order-sensitive check would cry drift where there is none - and a
+  // check that cries wrongly is deleted within the month.
+  const sameSet = (a, b) => a.size === b.size && [...a].every((v) => b.has(v));
+  const show = (set) => [...set].sort().join(",");
 
   const onlyInstance = [...served.keys()].filter((k) => !declared.has(k));
   const onlyContract = [...declared.keys()].filter((k) => !served.has(k));
   const valueGaps = [...declared.keys()]
-    .filter((k) => served.has(k) && declared.get(k).join("|") !== served.get(k).join("|"))
-    .map((k) => `${k}: contract [${declared.get(k)}] vs instance [${served.get(k)}]`);
+    .filter((k) => served.has(k) && !sameSet(declared.get(k), served.get(k).values))
+    .map((k) => `${k}: contract [${show(declared.get(k))}] vs instance [${show(served.get(k).values)}]`);
 
-  const ok = onlyInstance.length === 0 && onlyContract.length === 0 && valueGaps.length === 0;
+  // A default outside its own vocabulary resolves, displays, and is read by nothing - while both
+  // catalogues still agree on every name. The product holds this with an invariant of its own;
+  // this check sees an ANSWER rather than an invariant, which is the reason to look from here too.
+  const badFallbacks = [...served.entries()]
+    .filter(([, v]) => v.fallback !== undefined && v.fallback !== null && !v.values.has(v.fallback))
+    .map(([k, v]) => `${k}: default_when_unset '${v.fallback}' is not among [${show(v.values)}]`);
+
+  const ok = onlyInstance.length === 0 && onlyContract.length === 0
+    && valueGaps.length === 0 && badFallbacks.length === 0;
   const detail = ok
-    ? `${declared.size} options, same names and same values on both sides`
+    ? `${declared.size} options, same names and same value sets, every default within its own values`
     : [onlyInstance.length ? `served but not in the contract: ${onlyInstance.join(", ")}` : null,
        onlyContract.length ? `in the contract but not served: ${onlyContract.join(", ")}` : null,
-       valueGaps.length ? `values differ - ${valueGaps.join("; ")}` : null]
+       valueGaps.length ? `values differ - ${valueGaps.join("; ")}` : null,
+       badFallbacks.length ? `default outside its values - ${badFallbacks.join("; ")}` : null]
       .filter(Boolean).join("; ");
-  record("workflow catalog matches the contract", ok, detail);
+  record(CHECK, ok, detail);
 }
 
 // ── Live REST layer (the routes the galy CLI uses) ───────────────────────────
