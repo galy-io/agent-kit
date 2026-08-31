@@ -25,7 +25,9 @@ plan for the original task, no offer to continue, no apology.
 
 ### 1. What actually happened
 
-1-2 sentences. Literal trace: which step, which act, which result. No rephrasing.
+1-2 sentences. Literal trace: which step, which act, which result. No rephrasing. If the context was
+compacted, or the question is about an earlier session, read the transcript your harness keeps rather
+than reconstructing from memory — a remembered trace is the one thing this section must not contain.
 
 ### 2. What drove that behavior
 
@@ -48,13 +50,24 @@ button before declaring the fix done").
 ### 4. Proposed rule edits
 
 The deliverable. Concrete diffs the user can approve or reject. Targets, in order of preference:
+0. **The file that is actually wrong** — a script, a config, the code itself. If the root cause is a bug
+   there, fix it there; do not write a `.md` explaining why it keeps failing.
 1. **A plugin skill** (`${CLAUDE_PLUGIN_ROOT}/skills/**`) — if the behavior is skill-specific.
 2. **A plugin instruction** (`${CLAUDE_PLUGIN_ROOT}/instructions/*.md`) — a cross-skill convention.
 3. **The client's `CLAUDE.md`** — last resort, cross-cutting rules only.
 
+**If a rule that covers this already exists and did not fire, diagnose why** — wrong file, too far from
+the moment it was needed, or beaten by a rule it collides with — and fix *that* rule. A second rule
+saying the same thing is how a `CLAUDE.md` becomes unreadable, and an unread rule fires even less.
+
 Discipline: draft internally long → 1 line → shortest form; output the shortest that keeps the source
 behavior. Minimum diff — prefer swapping 3 words over adding a paragraph. Announce the word-count delta.
 Do not commit — present the edits and wait for the user's explicit go on each.
+
+**Keep the particulars out of the rule text**: no PR number, no tool name, no vendor, no acronym, no
+symptom. Those are true today and rot by the next time the rule is needed; the behaviour they came from
+is what has to survive. Starting long and trimming is what produces the general rule instead of a note
+about the incident.
 
 If no edit is warranted, say so ("a judgment call the current rules already cover; a single miss, not a
 pattern") — don't invent a rule to look productive. But an actual error against an existing rule always

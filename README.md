@@ -158,7 +158,7 @@ pretends otherwise.
 
 ## What you get
 
-Seventeen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
+Eighteen skills that take a need from idea to shipped, each driven by the Galy objects you manage:
 
 | Skill | What it does |
 |---|---|
@@ -167,6 +167,7 @@ Seventeen skills that take a need from idea to shipped, each driven by the Galy 
 | `connect` | Wire a repository to your workspace, or diagnose a connection that answers nothing. |
 | `workflows` | See and change what the skills may do on your behalf — and what your administrator decided for everyone. |
 | `bug-fix` | A bug from report to pull request: reproduce first, fix the cause, prove it on the user's own path, leave a follow-up check. |
+| `acceptance` | Sit in front of the running product and fire remarks: each is queued the instant it lands, then coded one at a time in the order received — one commit per remark, a single PR. |
 | `strategy` | Explore your objectives tree (read-only) and map work to the objective it serves. |
 | `okr-review` | Where the objectives stand: the tree with its progress, off-track and unreported key results first, and the pace each one now demands. Reads only. |
 | `okr-checkin` | The check-in ritual: one pass over the key results you own, one question, a dated trace on every figure that moved. |
