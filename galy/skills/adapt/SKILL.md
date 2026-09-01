@@ -76,7 +76,21 @@ it is a takeover, and it is the fastest way to have the whole thing reverted.
 
 ### 1. One added section in the root instruction file
 
-Appended, inside a delimited block, never a rewrite:
+Appended, inside a delimited block, never a rewrite.
+
+**One of its lines is not about their systems, and it is the one that decays fastest if it is
+missing: where a working rule gets written down.** An assistant that learns something — a
+convention, a correction, a trap it just fell into — will otherwise save it to a memory folder on
+the machine it happens to be running on. Nobody else can read that: not the next person, not a
+second machine, not a reviewer. And it never appears in a diff, so it can never be argued with.
+
+The rule to write is short, and it routes rather than forbids: **a working rule goes in the
+repository — the root instruction file, a domain instruction, or the skill it concerns — never in
+per-machine memory.** Memory already written stays readable; nothing new is added to it. Where a
+team already keeps its conventions, name that place instead: the point is that it is shared and
+committed, not that it is any particular file.
+
+The block itself:
 
 ```markdown
 <!-- galy:begin — géré par la prise en main Galy, modifiable -->
@@ -94,6 +108,11 @@ Appended, inside a delimited block, never a rewrite:
 
 **Le contrôle d'aiguillage se déclenche au premier appel qui écrit un fichier**, pas au début
 de l'exploration.
+
+**Une règle de travail se range dans ce dépôt, jamais dans la mémoire d'un poste.** Une
+convention, une correction, un piège rencontré : ils vont dans ce fichier, dans les
+instructions du domaine, ou dans la skill concernée. La mémoire déjà écrite reste lisible ;
+on n'y ajoute rien.
 
 ### Comment on livre ici
 
