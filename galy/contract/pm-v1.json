@@ -82,16 +82,21 @@
     {
       "name": "whoami",
       "kind": "read",
-      "description": "Identify the authenticated Galy user for this session (resolved from the token, no parameter). Use it to get the userId that feature_spec_pick and other per-user tools expect.",
+      "description": "Identify the authenticated Galy user and workspace for this session (resolved from the token, no parameter). Use it for the user_id that feature_spec_pick and other per-user tools expect — and for the workspace mark, which callers outside a browser have no other way to learn: logo_url and accent_color are null when the workspace has declared none, meaning \"use the product's own mark\", never \"use none\".",
       "params": [],
       "returns": {
         "success": "bool",
         "user_id": "int",
         "email": "string",
         "login": "string",
-        "full_name": "string",
-        "roles": "string[]",
-        "is_active": "bool"
+        "display_name": "string|null",
+        "tenant": {
+          "id": "int",
+          "name": "string",
+          "slug": "string",
+          "logo_url": "string|null",
+          "accent_color": "string|null"
+        }
       }
     },
     {
