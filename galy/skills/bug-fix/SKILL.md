@@ -71,9 +71,29 @@ check, concrete enough to run without you.
 Use `galy:ship`. It commits in the house style, opens the pull request, runs the self-review
 panel and fixes what it finds.
 
-**It ends there.** Merging and deploying stay with their process — that is a documented boundary
-of this kit, not a gap. Never merge because the checks went green, and never because the user
-said "vas-y" about an earlier step.
+**Where it hands over is the user's decision, and they have already made it.** Apply
+`bug-fix`/`merge_mode` following `${CLAUDE_PLUGIN_ROOT}/instructions/workflow-defaults.md` —
+resolve, apply a stored answer in silence, ask the two questions only when nothing is stored:
+
+| Value | What you do at the end |
+|---|---|
+| `stop-before-merge` | stop at "PR ready" — the pull request waits for a person |
+| `auto-merge` | hand the ready pull request to **their** merge process |
+| `merge-and-release` | hand it over, then trigger **their** release |
+
+Read it even when you are sure: a fix is the journey people run most often, and the setting only
+means something if it is read every time.
+
+**On an unattended run**, `bug-fix`/`auto_ship` decides whether the human gate fires: `confident`
+finishes without asking **only when** your confidence is high and the risk is low; below that
+bar, or on `always-manual`, you stop and wait however sure you feel. A fix that did not clear the
+bar says so in the pull request rather than slipping through on a good mood.
+
+**The kit itself still merges nothing and deploys nothing.** That is a documented boundary, not a
+gap: `auto-merge` means you hand over to the process they already have — the one `galy:adapt`
+wrote against their pipeline — and `merge-and-release` means you hand over twice. Never merge
+because the checks went green, never because the user said "vas-y" about an earlier step, and
+never because a setting sounded like permission to do it yourself.
 
 ## What you hand back
 

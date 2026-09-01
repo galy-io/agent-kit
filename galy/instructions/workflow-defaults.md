@@ -52,8 +52,28 @@ Before any related question to the user:
 
 ## Mirror helper
 
-After every `workflow_default_set`/`unset`, write the same value into `.galy/workflow-defaults.json`
-(`{ "<skill>": { "<option>": "<value>" } }`) so offline runs stay in sync.
+**This is a step, not a suggestion.** The mirror was described here long before anything wrote it,
+which made step 2 above a fallback onto a file that had never existed: an unattended run fell back
+on "ask", with nobody there to answer, and applied nothing at all. A repli that is documented and
+absent is worse than none — it is the one people count on.
+
+So after every `workflow_default_set` / `workflow_default_unset`, read `.galy/workflow-defaults.json`
+(missing = `{}`), set or remove `<skill>.<option>`, and write the whole file back:
+
+```json
+{ "bug-fix": { "merge_mode": "auto-merge" }, "ship": { "release_hold": "go-when-green" } }
+```
+
+Two rules on what goes in it, and the second one is the one that costs:
+
+- **Canonical values only** — the same strings the verb accepts, never a displayed label.
+- **The user layer alone. Never a policy.** A workspace policy is a fact about the workspace, it
+  changes without you, and a stale `allow` sitting in a local file is exactly the mistake that
+  matters: it would let an unattended run do, on its own, something the workspace has since
+  forbidden. Unreadable policy means ask — it never means allow.
+
+`.galy/` is gitignored. **Never commit the mirror**: it carries one person's choices, and a
+committed one silently answers for everybody who pulls the branch.
 
 ## Known options
 
@@ -65,11 +85,19 @@ a page offered a control no skill read, and a skill could have offered a value n
 
 | Skill | Option | Values |
 |---|---|---|
-| `feature-implement` | `merge_mode` | `auto-merge`, `stop-before-merge`, `ask` |
+| `feature-implement` | `merge_mode` | `stop-before-merge`, `auto-merge`, `merge-and-release`, `ask` |
+| `bug-fix`           | `merge_mode` | `stop-before-merge`, `auto-merge`, `merge-and-release`, `ask` |
+| `bug-fix`           | `auto_ship`  | `confident`, `always-manual`, `ask` |
 | `ship`              | `auto_ship`  | `confident`, `always-manual`, `ask` |
+| `ship`              | `preview_deploy` | `deploy-a-preview`, `skip-the-preview`, `ask` |
 | `ship`              | `release_trigger` | `merge-ships`, `separate-call`, `ask` |
 | `ship`              | `release_hold` | `hold-for-a-human`, `go-when-green`, `ask` |
 | `ship`              | `rollback_mode` | `revert-and-reship`, `redeploy-previous`, `no-way-back`, `ask` |
+
+**`merge_mode` and `auto_ship` each appear twice, and the skill name is what separates them.**
+Same question, two moments — the end of a spec, the end of a fix — and a team answers them
+differently more often than not. Resolving `merge_mode` without saying which skill you meant is
+how a fix ends up governed by the answer somebody gave about a spec.
 
 ### `auto_ship` flow
 
@@ -79,10 +107,27 @@ developer opt into hands-off shipping of safe changes. Follows the two-question 
 
 ### `merge_mode` flow
 
-Read by `feature-implement` before the final merge step: `auto-merge` → hand the ready PR to your own
-merge process; `stop-before-merge` → stop at "PR ready" for human review. Galy's kit never merges for
-you — the merge is always your CI/process (extension point). This option only decides whether the loop
-pauses for you before it.
+Read by `feature-implement` before the final merge step, and by `bug-fix` at the end of a fix:
+`stop-before-merge` → stop at "PR ready" for human review; `auto-merge` → hand the ready PR to your own
+merge process; `merge-and-release` → hand it over, then trigger your release too. Galy's kit never merges
+and never releases for you — both are always your CI/process (extension point). This option only decides
+whether the loop pauses for you before handing over, and how far the handover goes.
+
+**Merging and releasing are two authorisations, which is why there are three values and not two.**
+A team whose merge already ships reads the last two as one thing, and `ship`/`release_trigger` is what
+says so; a team that releases by a separate step could not, before, allow the first without the second.
+
+### `preview_deploy` flow
+
+Read by `ship` once the pull request is ready, and acted on **only** on `deploy-a-preview`: run the
+command this team already uses to put a branch where it can be seen running — the one `adapt` wrote
+against their pipeline. `skip-the-preview` does nothing **and says nothing**: a line announcing what
+you are not doing, on every run, is noise. Its default is `skip-the-preview`, because pushing a branch
+somewhere is a visible act on infrastructure that may not even exist.
+
+**No preview environment is a real answer**, the same one as `no-way-back`: say there is nowhere to put
+it rather than invent a command. An invented deploy reads like a procedure and is discovered on the day
+it matters.
 
 ### The three release options — they describe YOUR pipeline
 

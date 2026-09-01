@@ -13,6 +13,7 @@
         "merge_mode": [
           "auto-merge",
           "stop-before-merge",
+          "merge-and-release",
           "ask"
         ]
       },
@@ -36,6 +37,24 @@
           "revert-and-reship",
           "redeploy-previous",
           "no-way-back",
+          "ask"
+        ],
+        "preview_deploy": [
+          "deploy-a-preview",
+          "skip-the-preview",
+          "ask"
+        ]
+      },
+      "bug-fix": {
+        "merge_mode": [
+          "stop-before-merge",
+          "auto-merge",
+          "merge-and-release",
+          "ask"
+        ],
+        "auto_ship": [
+          "confident",
+          "always-manual",
           "ask"
         ]
       }
@@ -1023,6 +1042,7 @@
           "required": true,
           "description": "Skill name without the leading slash.",
           "enum": [
+            "bug-fix",
             "feature-implement",
             "ship"
           ]
@@ -1035,6 +1055,7 @@
           "enum": [
             "auto_ship",
             "merge_mode",
+            "preview_deploy",
             "release_hold",
             "release_trigger",
             "rollback_mode"
@@ -1072,6 +1093,7 @@
           "required": true,
           "description": "Skill name without the leading slash.",
           "enum": [
+            "bug-fix",
             "feature-implement",
             "ship"
           ]
@@ -1084,6 +1106,7 @@
           "enum": [
             "auto_ship",
             "merge_mode",
+            "preview_deploy",
             "release_hold",
             "release_trigger",
             "rollback_mode"
@@ -1099,13 +1122,16 @@
             "ask",
             "auto-merge",
             "confident",
+            "deploy-a-preview",
             "go-when-green",
             "hold-for-a-human",
+            "merge-and-release",
             "merge-ships",
             "no-way-back",
             "redeploy-previous",
             "revert-and-reship",
             "separate-call",
+            "skip-the-preview",
             "stop-before-merge"
           ]
         }
@@ -1128,6 +1154,7 @@
           "type": "string",
           "required": true,
           "enum": [
+            "bug-fix",
             "feature-implement",
             "ship"
           ]
@@ -1139,6 +1166,7 @@
           "enum": [
             "auto_ship",
             "merge_mode",
+            "preview_deploy",
             "release_hold",
             "release_trigger",
             "rollback_mode"

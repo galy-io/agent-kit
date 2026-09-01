@@ -42,7 +42,10 @@ and end with the `settings_url`. No option is worth more than one line.
 | Skill | Option | What it decides |
 |---|---|---|
 | `ship` | `auto_ship` | whether a safe, high-confidence change is committed and its pull request opened without stopping for you, or whether the human gate fires every time |
-| `feature-implement` | `merge_mode` | whether the loop hands the ready pull request straight to **your** merge process, or stops at "PR ready" for your review |
+| `feature-implement` | `merge_mode` | whether the loop hands the ready pull request straight to **your** merge process — and on to your release — or stops at "PR ready" for your review |
+| `bug-fix` | `merge_mode` | the same question at the end of a fix, answered separately: a team can want a spec handed over and a fix looked at |
+| `bug-fix` | `auto_ship` | whether an unattended run finishes a low-risk fix on its own, or always stops for a person |
+| `ship` | `preview_deploy` | whether a change is put on a preview environment before the merge, so it can be seen running |
 | `ship` | `release_trigger` | whether merging is already shipping here, or a separate call ships it afterwards |
 | `ship` | `release_hold` | whether a release stops and waits for a person, or goes as soon as the checks are green |
 | `ship` | `rollback_mode` | how going back is done here — including *there is no way back yet*, which is a real answer |
@@ -52,10 +55,16 @@ documented boundary, not a gap — and `merge_mode` only decides whether the loo
 handing the pull request over to the process you already have. An option that merged for you would
 be a lie about what this kit does.
 
-The last three are the sharpest case of that, so say it when you show them: they **describe your
+The last four are the sharpest case of that, so say it when you show them: they **describe your
 pipeline, they do not drive it.** Nothing in the kit reads `release_trigger` and then deploys.
 What reads them is a skill written for your own repository, and what it does with them is
 whatever your own commands do.
+
+**Two settings carry the same name, and the pairing is not a copy.** `merge_mode` and `auto_ship`
+each exist twice — once at the end of a spec, once at the end of a fix — because they are the
+same question asked at two different moments, and a team answers them differently more often than
+not: hand a spec over, look at a fix. Always name the moment when you show one, never the option
+alone: "at the end of a fix" is what tells the person which of the two they are changing.
 
 ## Changing one
 

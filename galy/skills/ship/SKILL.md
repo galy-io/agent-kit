@@ -40,9 +40,20 @@ a skill written for your repository never has to guess:
 
 | Option | What it says |
 |---|---|
+| `ship`/`preview_deploy` | whether a change is put somewhere it can be looked at, before the merge |
 | `ship`/`release_trigger` | whether merging is enough to ship, or a separate call is needed |
 | `ship`/`release_hold` | whether a release waits for a person, or goes on green |
 | `ship`/`rollback_mode` | how going back is done here — including *there is no way back yet* |
+
+**`preview_deploy` is the only one of the four you act on here**, and only on
+`deploy-a-preview`: once the pull request is ready, run the command this team already uses to put
+a branch where it can be seen — the one `galy:adapt` wrote against their pipeline. On
+`skip-the-preview`, do nothing and say nothing: a line announcing what you are not doing, on
+every single run, is noise.
+
+**A team with no preview environment is a real answer**, and the same one as `no-way-back`: say
+there is nowhere to put it rather than inventing a command. An invented deploy reads like a
+procedure and is discovered on the day it matters.
 
 Read them with `mcp__galy__workflow_policy_resolve`, never from memory, and read the vocabulary
 this instance actually knows with `mcp__galy__workflow_catalog_list`: an option it does not know
