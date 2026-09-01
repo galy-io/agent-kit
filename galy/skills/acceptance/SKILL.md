@@ -99,7 +99,7 @@ Pick the **oldest** `pending` item. Not the last one typed: a fresh remark joins
    keeps Galy in step and, if you die mid-item, lets the next session pick it up when the lease runs out.
 2. Fix the cause, following the `bug-fix` discipline. **Decide trivia on the spot** — naming, which file,
    which format, anything you can settle from the code in under a minute.
-3. **Only a real product decision parks**: write the question into the item, set it `awaiting_user`,
+3. **Only what a commit cannot undo parks**: write the question into the item, set it `awaiting_user`,
    `acceptance_park(galy_id, question_md)`, and move to the next item. Never wait, never end the turn on
    it. The person can also answer it from the Galy screen, and the queue picks that up.
 4. Verify it on the surface the person was looking at, in the running product.
@@ -151,8 +151,8 @@ person gave still holds.
 - **A failed push is not an event.** It costs the person nothing and it costs you one line at `status`.
   Never interrupt a pass to report one.
 - **Never end a turn waiting for a go.** A recap is not a stop. Keep draining.
-- **Never block the queue on a small question** — decide it. `awaiting_user` is for decisions that are
-  genuinely not yours, and even then the queue keeps moving.
+- **Park what a commit cannot undo, and nothing else.** A change one revert takes back is yours to
+  make: if you have a recommendation, apply it and say which one — waiting costs more than being wrong.
 - **Newest is not next.** After each item, re-pick the oldest `pending`.
 - **One item, one commit.** A commit that carries three remarks cannot be reverted for one of them.
 - **Verified means seen.** An item is `done` when you watched the product do the right thing, not when
