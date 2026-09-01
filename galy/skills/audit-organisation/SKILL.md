@@ -1,6 +1,6 @@
 ---
 name: audit-organisation
-description: Audit this team's engineering practices against Galy's twenty recommended criteria, one criterion at a time, one line each. The same skill runs the first pass and every one after it. Fires on a plain sentence such as "audite mon projet", "démarre l'onboarding Galy", "commence la prise en main", "fais le point", "start the Galy audit", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. It says what it is about to check, checks it, reports one line, and stops to have anything that is not green confirmed before writing it. It observes and proposes; it applies nothing, merges nothing, and triggers nothing.
+description: Audit this team's engineering practices against Galy's twenty recommended criteria, one criterion at a time, one line each. The same skill runs the first pass and every one after it. Fires on a plain sentence such as "audite mon projet", "démarre l'onboarding Galy", "commence la prise en main", "fais le point", "start the Galy audit", "où en sont nos pratiques ?", or whenever a session finds that nothing has ever been observed. Also fires on a question about a past audit — "où en sont les recommandations ?", "montre-moi l'audit", "what did the audit find?" — which it answers from the recorded state and ends on the address of the page, without opening a pass. It says what it is about to check, checks it, reports one line, and stops to have anything that is not green confirmed before writing it. It observes and proposes; it applies nothing, merges nothing, and triggers nothing.
 ---
 
 # audit-organisation — observe the practices, trigger nothing
@@ -83,6 +83,45 @@ days of forge history once and answers five criteria from it; splitting that int
 the same cost five times. **Group by what you have to go and read, report by criterion.** The user
 sees five lines, one after another, whatever you did behind them.
 
+## Wherever you report a state, the page is the last line
+
+**Every time you tell someone where their practices stand, the last line is the address of the
+page.** Three moments are reports, and only the first one used to be treated as one:
+
+- the close of a full pass;
+- a pass that stops because nobody answered, and says which findings are being held;
+- **a plain question asked outside any pass** — "où en sont les recommandations de l'audit ?",
+  "what did the audit find?". This is the one that gets missed, and it is the most common of the
+  three: passes are rare, and the state gets asked about for months afterwards.
+
+The address is `page_url`, and `mcp__galy__maturity_challenge` returns it on every call — so a
+report has no excuse for lacking one. **Give the address the tool returned and never build one:**
+a Galy instance is not guessable — every workspace answers on its own host, and a dedicated
+instance lives under the client's own name — so an address you assembled yourself lands on a 404
+or, worse, on somebody else's instance. If no call gave you one, say the page exists and say you
+do not have its address; that is a bug to report, not a gap to paper over.
+
+**Asking about the state is not asking for a pass.** "Où en sont les recommandations ?" is
+answered by one `mcp__galy__maturity_challenge` call and three lines: what is at risk or how many
+practices are observed, the single next step in plain words, and the address. Then stop. Opening
+a pass because someone asked a question spends an afternoon of their attention on something they
+did not ask for — offer it in half a sentence if the state is stale, and let them say yes.
+
+**Not on every line, and not at a checkpoint.** A link repeated after each of twenty criteria is
+the wall of text this pass exists to avoid, and at a checkpoint it is worse than noise — it is
+wrong: the finding you are asking about is precisely the one that is *not* on the page yet. The
+page carries what was recorded, and a report is what closes a stretch of work.
+
+**The reason is not courtesy: your report is not the audit.** Four lines cannot carry twenty
+verdicts with their evidence, their dates, the questions still open and what the last pass
+answered — they point at it. A report with no link asks the reader to take your word for it, and
+leaves them nowhere to go at the exact moment they want to argue with a line. That moment is when
+an audit stops being decoration.
+
+**What this rule was written for:** a workspace was carrying nine findings held for want of an
+answer, and nothing the assistant had ever said told the user where to read them. They were in
+the product the whole time, argued and dated, behind an address the reader had no way to guess.
+
 ## The checkpoint: nothing but green is written unattended
 
 **A pass that never stops is a pass nobody agreed to.** The user watched twenty verdicts scroll by
@@ -146,9 +185,16 @@ So the checkpoint is a pause, never a deadlock:
 
   > Ces constats attendent ton accord et ne sont pas enregistrés : <la pratique> — <l'état>,
   > <la pratique> — <l'état>. Dis-moi « enregistre » et je les écris.
+  >
+  > Ce qui est déjà constaté est là : <page_url>.
 
   They are yours to say and not yours to write. Saying them costs nothing and keeps the finding;
   writing them is what needed the yes.
+
+  **And the link goes out here too, worded for what is true**: the page holds what was recorded,
+  not what is being held. Someone who comes back a week later has forgotten which is which, and
+  a link presented as "the findings" would show them a page that is missing exactly the ones
+  they were asked about.
 
 **Never record a held finding because the pass is ending.** The end of a pass is not consent, and
 « il n'a pas répondu » is not a yes. A grid that filled itself in because someone went to lunch is
@@ -394,13 +440,9 @@ more and close on **what it returns**, not on what you remember. Four lines, and
    the power the team has and say that nothing was seen guarding it. Never the identifier.
 3. **One next step**, with its duration and its risk. Not a shopping list: one step — and named
    the way a developer would name it, not the way the database stores it.
-4. **The link to the maturity page**, and it is the last line of the pass.
-
-**Give the URL the tool returns. Never build one.** The address of a Galy instance is not
-guessable — every workspace answers on its own host and a dedicated instance lives under the
-client's own name — so a link you assembled yourself lands on a 404 or, worse, on somebody else's
-instance. If no tool gave you a URL, say the page exists and say you do not have its address; that
-is a bug to report, not a gap to paper over.
+4. **The link to the maturity page**, and it is the last line of the pass — `page_url`, as the
+   call returned it. The rule and its reason are above, in *Wherever you report a state, the page
+   is the last line*; this is the moment it was written for, and it is not the only one.
 
 The link is what makes the four lines above sufficient rather than thin: the argument for every
 one of the twenty verdicts is on that page, with its evidence, its date and its history. You are
