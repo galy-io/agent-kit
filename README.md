@@ -65,16 +65,17 @@ cache on its own schedule. To pull the current state right now:
 claude plugin marketplace update galy
 ```
 
-## It starts on its own
+## It says nothing until you ask
 
-Opening your agent in a connected repository **triggers the conversation about your practices** — you
-do not have to know what to type. A `SessionStart` hook hands the session one instruction: read the
-practice baseline through `maturity_challenge` before answering, and open with a single line — where
-you stand, and the one next step. If something is at risk, that comes first.
+**The kit takes no part in the opening of a session.** It installs no startup hook, injects no
+instruction, and spends none of a session's first seconds on itself. Open your agent in a connected
+repository and you get your agent, on the subject you came for.
 
-The hook is offline. It calls nothing, reads no token, and stays silent in repositories that have
-nothing to do with Galy. A repository that has never been observed is offered the first pass once; a
-repository already connected is challenged at most once every twelve hours.
+That was not always so. A `SessionStart` hook used to hand every session one instruction — read the
+practice baseline, then open on a line about it — and it was wrong on both counts. It cost a process
+at every start, and the line landed in front of somebody who had come to do something else. A tool
+that says its own name before the user has said theirs is a tool people turn off, and the practices
+are worth more than the reminder that they exist.
 
 Nothing has to be typed as a command. **A plain sentence starts the first pass** — "démarre
 l'onboarding Galy", "start the Galy onboarding", "où en sont nos pratiques ?", "fais le point" — and
@@ -246,8 +247,7 @@ The output is gitignored. It is a build artifact, not a second copy to maintain.
 .claude-plugin/marketplace.json   # marketplace entry
 galy/
   .claude-plugin/plugin.json      # plugin manifest
-  hooks/hooks.json                # SessionStart — what makes it start on its own
-  hooks/session-start.mjs         # offline: decides whether Galy has anything to say here
+  hooks/hooks.json                # PreToolUse — the guard on CLAUDE.md
   agents/<name>.md                # the 6 subject agents the first pass dispatches
   skills/<name>/SKILL.md          # the 17 skills
   instructions/                   # shared conventions the skills reference

@@ -1597,7 +1597,7 @@
     {
       "name": "maturity_challenge",
       "kind": "read",
-      "description": "Read where the team's agent-assisted engineering practices stand: level reached, the single next step, what is at risk, and the criteria nobody has ever looked at. The kit's SessionStart hook asks for it before anything else — it is what makes opening a session start the conversation.",
+      "description": "Read where the team's agent-assisted engineering practices stand: level reached, the single next step, what is at risk, and the criteria nobody has ever looked at.",
       "params": [],
       "returns": {
         "success": "bool",
