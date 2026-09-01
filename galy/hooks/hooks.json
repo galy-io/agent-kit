@@ -1,5 +1,5 @@
 {
-  "description": "Galy — on a fresh session, challenge the team on its engineering practices before doing anything else.",
+  "description": "Galy — challenge the team's practices when a session opens, and hold the door on the one file every session pays for.",
   "hooks": {
     "SessionStart": [
       {
@@ -9,6 +9,18 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\"",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/claude-md-guard.mjs\"",
+            "timeout": 5
           }
         ]
       }
