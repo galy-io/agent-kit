@@ -44,8 +44,11 @@ watchdog never fires — ideal.
    `${CLAUDE_PLUGIN_ROOT}/instructions/acceptance-criteria.md`); set each status; screenshot visual blocks.
 6. **PR ready.** Invoke `ship` to open/finish the PR through the self-review panel. Apply the
    `feature-implement`/`merge_mode` default (see `${CLAUDE_PLUGIN_ROOT}/instructions/workflow-defaults.md`):
-   `stop-before-merge` → stop at PR ready; `auto-merge` → hand the ready PR to your own merge process.
-   **This kit never merges for you.**
+   `stop-before-merge` → stop at PR ready; `auto-merge` → hand the ready PR to your own merge process;
+   `merge-and-release` → hand it over, then trigger your release too. **This kit never merges and never
+   releases for you** — the value says where the loop stops handing over, never what Galy does. On a
+   chain where merging already ships, the last two describe the same thing, and `ship`/`release_trigger`
+   is what says so.
 7. **Close.** `mcp__galy__feature_spec_complete(specId, prUrl)`. Adjust the brief's follow-up horizon if
    delivery slipped (follow-up conventions). Then invoke `retro` (additive, never blocking).
 8. **Disarm the watchdog last** — `CronList` → `CronDelete` — only after the report is delivered.
