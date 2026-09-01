@@ -20,7 +20,7 @@ Each remark is then implemented **in the order received**: one commit per item, 
 | nothing, or a spec id / a topic | **start** — open or resume an acceptance pass |
 | `status` | show the queue and the open questions |
 | `answer <n> <text>` | reply to a parked question; the item re-queues |
-| `stop` | close intake, drain what is left, hand the PR to `ship` |
+| `stop` | stop taking remarks, drain what is left, hand the PR to `ship` |
 | anything else, while a pass is open | a **remark** — it goes to the queue |
 
 ## The queue: the file first, then Galy
@@ -75,14 +75,21 @@ backwards.
 4. Open **one** draft PR for the whole session, record its URL in the file, and
    `acceptance_set_pr(galy_session, prNumber, prUrl)`. One session, one PR: a PR per remark buries the
    reviewer, and a reviewer who skims is a reviewer you no longer have.
-5. Say in one line that intake is open, then stop talking. The person is looking at the product, not at
-   your terminal.
+5. Say in one line that you are ready to take remarks, then stop talking. The person is looking at the
+   product, not at your terminal.
 
-## Intake
+**EVERYTHING YOU SAY IN THIS PASS IS IN THE PERSON'S OWN LANGUAGE**, and that includes the four words
+you say most often. This skill is written in English because the kit is; the person facing the product
+did not ask for English, and a French session that answers `#3 queued` has just told them the tool was
+not built for them. The state names — `pending`, `done`, `wont_fix` — are data and stay as they are in
+the file and in Galy; what you PRINT is theirs.
+
+## Taking the remarks
 
 Every line the person types that is not a mode is a remark. **Write it to the file first**, push it to
-Galy second, then acknowledge in a single short line — `#3 queued` — and nothing else. No restating it
-back in your own words, no plan, no estimate, and no mention of the push either way.
+Galy second, then acknowledge in a single short line — the number and one word saying it is recorded,
+in their language — and nothing else. No restating it back in your own words, no plan, no estimate, and
+no mention of the push either way.
 
 ## Drain
 
@@ -100,7 +107,7 @@ Pick the **oldest** `pending` item. Not the last one typed: a fresh remark joins
 6. Mark it `done` with the commit sha and one line of what changed; then
    `acceptance_resolve(galy_id, status="done", commit_sha=…, result_md=…)`.
 
-Then pick the next oldest. Repeat until nothing is `pending`, and go back to intake.
+Then pick the next oldest. Repeat until nothing is `pending`, and go back to taking remarks.
 
 **A remark you looked at and chose to leave alone is `wont_fix`, never `done`.** Put the reason in
 `result_md` — that is the whole point of the state. What you fixed is readable in the commits; what you
@@ -125,7 +132,7 @@ person gave still holds.
 
 ## stop
 
-1. Close intake in the file.
+1. Close the intake in the file — the field is `intake`, and it stays that word.
 2. **Push whatever is still `pushed: false`.** If any of them will not go, say which, and stop there.
    Closing a pass whose remarks never reached Galy is closing a pass nobody can read back — the exact
    thing this skill exists to prevent.
@@ -137,6 +144,8 @@ person gave still holds.
 
 ## Discipline
 
+- **You speak the person's language, always.** The skill is in English, the states are in English, the
+  person is not. What appears on their screen is theirs.
 - **The file is written before anything else happens, and Galy right after.** A remark that exists only
   in context is a remark you will lose, and nobody will know which one.
 - **A failed push is not an event.** It costs the person nothing and it costs you one line at `status`.
