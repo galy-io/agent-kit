@@ -16,8 +16,16 @@ root instruction file, and it decides where you read from and where you write ba
 
 - **Their existing system** — a ticket id in their shape (`PROJ-123`, `#1234`, `AB#5678`), read
   through their own tools. You update it there, in their statuses, with their vocabulary.
-- **Galy** — no ticket anywhere yet. Frame it as a brief with one user story, so the fix is
-  attached to something, and the follow-up has a home.
+- **Galy** — file it with `bug_create`, before you understand anything. A defect is its own
+  object there: it carries a nature (`bug`, or `feature` for something to build), a severity, a
+  lifecycle and a history, and it attaches to a brief or a spec only if one exists. Keep
+  `description_md` to the business summary — context, symptom, approach — and put the trace, the
+  query and the measurements in `technical_detail_md`; over 1200 characters the tool refuses a
+  summary with no detail beside it, because a summary is what a list previews.
+
+  *This used to say "frame it as a brief with one user story". It was a costume: a brief states
+  why something should be BUILT, and a list of them could tell no need from a breakage — on the
+  screen this product is taught with. The object landed on 1 September 2026.*
 
 If you are handed a bare error and cannot tell which system owns it, **ask** — one question, one
 line. Writing the outcome into the wrong tracker is worse than not writing it.
@@ -66,6 +74,17 @@ Add a follow-up check with `mcp__galy__followup_check_add`, or in their system i
 bugs live: what to look at, on what horizon, to know this class of failure has not returned. One
 check, concrete enough to run without you.
 
+**And if we caused it ourselves, say so on the ticket.** `bug_record_regression` takes the pull
+request that caused it, what kind of miss it was, and what would catch that class at the boundary.
+That last field is the answer to "why did nothing catch this?" from step 2 — written where the
+next person meets it, instead of in a pull-request body nobody reads twice.
+
+A ticket left open is a ticket somebody re-reads tonight. Move it with `bug_set_status` as you
+go — `in_progress` when you start, `awaiting_validation` when the pull request is up — and if you
+end up unsure rather than done, `bug_set_requires_human` with the question in one sentence. It
+demands that sentence, and it is right to: a column of tickets waiting on a person, none of which
+says what for, is a column nobody works through.
+
 ### 6. Hand it over
 
 Use `galy:ship`. It commits in the house style, opens the pull request, runs the self-review
@@ -82,7 +101,10 @@ Four lines, business first:
 1. **What was broken**, in the words of someone who suffered it — not the exception name.
 2. **Why**, in one sentence: the cause and the layer it lived in.
 3. **What proves it is fixed**: the test that went red then green, and the replayed path.
-4. **The pull-request link**, and the follow-up check you left behind.
+4. **The pull-request link**, the ticket it closes, and the follow-up check you left behind.
+
+Call the ticket what it is — a defect on record, with its number. Never "a brief": that word
+names a need, and it reads as a new feature to whoever asked you to repair one.
 
 Then, if it applies, the one sentence that is worth more than the fix: what would have caught
 this at the boundary, and what it would cost to add.
