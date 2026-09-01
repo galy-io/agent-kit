@@ -1272,6 +1272,241 @@
       }
     },
     {
+      "name": "acceptance_open",
+      "kind": "write",
+      "description": "Open an acceptance pass on a running feature — one pass = one branch = one pull request. Idempotent on the branch: called again it hands back the pass already open, so a session that crashed and came back does not fork the queue in two. STAYS IN YOUR WORKSPACE, like every verb here.",
+      "params": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": "What is being reviewed, in the reviewer's own words — not a date and not a branch name."
+        },
+        {
+          "name": "branch_name",
+          "type": "string",
+          "required": false,
+          "description": "The single branch this pass commits to."
+        },
+        {
+          "name": "feature_spec_id",
+          "type": "int",
+          "required": false
+        },
+        {
+          "name": "feature_brief_id",
+          "type": "int",
+          "required": false
+        }
+      ],
+      "returns": {
+        "success": "bool",
+        "session_id": "int",
+        "session": "object"
+      }
+    },
+    {
+      "name": "acceptance_add_remark",
+      "kind": "write",
+      "description": "Add one remark to the queue. Persisted immediately as queued, at the back. Returns at once — never blocks, never waits for the remark to be dealt with, because the person firing remarks is looking at the product and not at a terminal. Carries the remark only: no code, no diff, no file content.",
+      "params": [
+        {
+          "name": "session_id",
+          "type": "int",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": "The remark, as short as it was said."
+        },
+        {
+          "name": "description_md",
+          "type": "string",
+          "required": false,
+          "description": "Any detail worth keeping."
+        }
+      ],
+      "returns": {
+        "success": "bool",
+        "remark_id": "int",
+        "entry_order": "int"
+      }
+    },
+    {
+      "name": "acceptance_list",
+      "kind": "read",
+      "description": "Without session_id: the acceptance passes, open ones first. With session_id: that pass's remarks, in the order they were received.",
+      "params": [
+        {
+          "name": "session_id",
+          "type": "int",
+          "required": false,
+          "description": "List this pass's remarks instead of the passes."
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "description": "queued | in_progress | awaiting_user | done | wont_fix | failed"
+        }
+      ],
+      "returns": {
+        "success": "bool",
+        "sessions": "array",
+        "remarks": "array"
+      }
+    },
+    {
+      "name": "acceptance_claim_next",
+      "kind": "write",
+      "description": "Take the oldest remark waiting, or one whose lease has run out, and hold it under a new lease. Steps over remarks parked on a question — the queue must not stall behind a decision that belongs to a person. Returns claimed=false when there is nothing to do.",
+      "params": [
+        {
+          "name": "session_id",
+          "type": "int",
+          "required": true
+        },
+        {
+          "name": "claimed_by",
+          "type": "string",
+          "required": true,
+          "description": "Who is taking it — a hostname, a session name."
+        },
+        {
+          "name": "lease_minutes",
+          "type": "int",
+          "required": false,
+          "description": "Minutes before the claim expires and the remark can be taken by someone else (default 15)."
+        }
+      ],
+      "returns": {
+        "success": "bool",
+        "claimed": "bool",
+        "remark": "object"
+      }
+    },
+    {
+      "name": "acceptance_resolve",
+      "kind": "write",
+      "description": "Close a remark. done, with the commit that fixed it. wont_fix when it was looked at and deliberately left alone — put the reason in result_md, because what you fixed is readable in the commits and what you knowingly chose NOT to fix is readable nowhere else. failed when it genuinely could not be fixed, reason in result_md too.",
+      "params": [
+        {
+          "name": "remark_id",
+          "type": "int",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "description": "done | wont_fix | failed (default done)"
+        },
+        {
+          "name": "commit_sha",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "result_md",
+          "type": "string",
+          "required": false,
+          "description": "What changed — or why it was left alone."
+        }
+      ],
+      "returns": {
+        "success": "bool"
+      }
+    },
+    {
+      "name": "acceptance_park",
+      "kind": "write",
+      "description": "Park a remark on a question only a person can answer. The caller must then move on to the next remark, never wait. Use this only when the answer truly requires a person — anything settleable from the code in under a minute is settled on the spot.",
+      "params": [
+        {
+          "name": "remark_id",
+          "type": "int",
+          "required": true
+        },
+        {
+          "name": "question_md",
+          "type": "string",
+          "required": true,
+          "description": "The question, written to be read by the person answering."
+        }
+      ],
+      "returns": {
+        "success": "bool"
+      }
+    },
+    {
+      "name": "acceptance_answer",
+      "kind": "write",
+      "description": "Answer a parked question. The remark goes back to the queue at its own place, not at the front: the order the person gave still holds, and an answer is not a reason to jump the line.",
+      "params": [
+        {
+          "name": "remark_id",
+          "type": "int",
+          "required": true
+        },
+        {
+          "name": "answer_md",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "returns": {
+        "success": "bool"
+      }
+    },
+    {
+      "name": "acceptance_set_pr",
+      "kind": "write",
+      "description": "Attach the pass's single pull request. One pass, one PR: a PR per remark buries the reviewer, and a reviewer who skims is a reviewer you no longer have.",
+      "params": [
+        {
+          "name": "session_id",
+          "type": "int",
+          "required": true
+        },
+        {
+          "name": "pr_number",
+          "type": "int",
+          "required": true
+        },
+        {
+          "name": "pr_url",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "returns": {
+        "success": "bool"
+      }
+    },
+    {
+      "name": "acceptance_close",
+      "kind": "write",
+      "description": "Close the pass. merged | abandoned (default merged).",
+      "params": [
+        {
+          "name": "session_id",
+          "type": "int",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "description": "merged | abandoned"
+        }
+      ],
+      "returns": {
+        "success": "bool"
+      }
+    },
+    {
       "name": "onboarding_retro_record",
       "kind": "write",
       "description": "Record the retrospective of an onboarding pass - what worked, what rubbed, the open questions, the suggestions - about the PROCESS, not about the team's work. It is written to the client's own tenant and stays there; no policy guards it, because writing in your own workspace asks nobody's permission. The four fields carry process feedback only: never code, file excerpts, paths, host names, command output, secrets, customer or product names, nor any recorded observation. The server redacts as a net and says so; a redaction that fires means something was written that should not have been. STAYS IN YOUR WORKSPACE, like every verb in this contract. Whether the instance forwards anything to Galy is an instance setting the client's administrator holds, disabled by default - no verb here decides it, and no user is asked.",
