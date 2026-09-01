@@ -83,7 +83,6 @@ Appended, inside a delimited block, never a rewrite:
 ## Galy, à côté de ce qui existe
 
 <qui possède quoi — une ligne par système, tirée de la proposition de liaison>
-<les formes d'identifiants et à quel système chacune appartient>
 <la phrase qui dit que rien d'existant ne change>
 
 <la phrase impérative : où vivent les éléments de travail, et où ils ne vivent pas>
@@ -122,8 +121,8 @@ Three properties, each load-bearing:
 carries on writing code without ever opening Galy. The block has to say what a session must **do**,
 and **when the rule fires**.
 
-The proven shape is Green Acres', running on a hundred-odd skills — take its structure, not its
-names:
+The shape below is proven on a repository of a hundred-odd skills. Take its structure; the names
+in it belong to whoever wrote them:
 
 1. **One imperative sentence** naming where work items live and where they do not. Theirs reads:
    *"Every work item — bug or user story — is created, read and closed in X, never in an external
@@ -178,10 +177,10 @@ Same rules as above, same collision handling, same directory. What changes is wh
 come from: **not the kit's generic version, but the named facts `galy:delivery` came back with.**
 There is no generic merge skill to adapt, because there is no generic way to merge.
 
-**Two skills, not one, and the split is the whole lesson.** Green Acres runs this on a hundred-odd
-commands: their merge command stops *after* the merge, and shipping is a separate call that
-deposits a request in a queue. Take that shape — never their commands, never their queue, never
-their names, which belong to them:
+**Two skills, not one, and the split is the whole lesson.** It is proven on a repository of a
+hundred-odd commands, where the merge command stops *after* the merge and shipping is a separate
+call depositing a request in a queue. Take that shape — never a particular team's commands, queue
+or names, which belong to them:
 
 - **the merge skill ends at the merge**, and says so in its own first lines. Everything before it
   — the branch, the pull request, the review — is `ship`'s job and is not repeated here.
