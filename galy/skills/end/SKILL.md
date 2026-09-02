@@ -30,3 +30,5 @@ Follow the ship-celebration variant in `${CLAUDE_PLUGIN_ROOT}/instructions/deliv
 - **Verified only.** No celebration on a pipeline/queue status alone — you must have seen the change
   working in production.
 - **Simple.** No tools, no scripts, no ceremony beyond the line and its link.
+- **Hand back the workspace you took.** A parcours is not closed while it still holds one. Look
+  first — nobody else knows whether what is in it is finished.
