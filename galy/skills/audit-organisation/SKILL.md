@@ -78,7 +78,7 @@ one line per criterion skipped.
 
 ### What "one at a time" does not mean
 
-It does not mean one agent per criterion when several share a source. `galy:delivery` reads ninety
+It does not mean one agent per criterion when several share a source. `bg:delivery` reads ninety
 days of forge history once and answers five criteria from it; splitting that into five agents pays
 the same cost five times. **Group by what you have to go and read, report by criterion.** The user
 sees five lines, one after another, whatever you did behind them.
@@ -215,15 +215,15 @@ no action the repository's own doctrine forbids.
 
 ## The agents
 
-Six subject agents carry the method for their own criteria — `galy:project-management`,
-`galy:ground`, `galy:secrets`, `galy:delivery`, `galy:schema`, `galy:autonomy`.
+Six subject agents carry the method for their own criteria — `bg:project-management`,
+`bg:ground`, `bg:secrets`, `bg:delivery`, `bg:schema`, `bg:autonomy`.
 
-**`galy:project-management` runs first**, alone, and you wait for it. It answers the one question
+**`bg:project-management` runs first**, alone, and you wait for it. It answers the one question
 that changes what everything else means: *where does this team's work already live?* A team that
-already tracks its work will not move it, and its binding proposal decides what `galy:adapt` can
+already tracks its work will not move it, and its binding proposal decides what `bg:adapt` can
 propose later.
 
-**`galy:delivery` runs second**, before the rest, for the same reason and no other: besides its
+**`bg:delivery` runs second**, before the rest, for the same reason and no other: besides its
 five verdicts it returns the named facts about their chain — the pipeline file and its trigger,
 whether a push to the default branch deploys, the rollback, the commands that already exist — and
 without them the adaptation writes no delivery skill at all. It reads ninety days of history once
@@ -313,7 +313,7 @@ opens the criterion, and it is what makes the verdict arguable instead of oracul
 
 ## Handing back the adaptation
 
-Once `galy:project-management` **and `galy:delivery`** have returned, run **`galy:adapt`**: it
+Once `bg:project-management` **and `bg:delivery`** have returned, run **`bg:adapt`**: it
 opens a branch and a pull request carrying an added, delimited section in the root instruction
 file, skills bound to their environment beside their existing ones, and — when the delivery facts
 came back — a merge skill and a release skill written against their own pipeline, holes and all.

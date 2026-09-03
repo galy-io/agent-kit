@@ -98,7 +98,7 @@ conversation is a token in a log, in a backup, and in whatever the transcript is
 
 Say what changed, in one line, then get out of the way — the user came to work, not to configure.
 
-If this repository has never been observed, offer the `galy:audit-organisation` skill: it tours the ground, says
+If this repository has never been observed, offer the `bg:audit-organisation` skill: it tours the ground, says
 where the practices stand against the twenty criteria, and records what it saw. It reads and proposes;
 it changes nothing on its own.
 

@@ -27,6 +27,13 @@
 //      first developer to type it concluded the product did not exist. It had already been
 //      corrected on the screen — and stayed wrong here, which is precisely what a check is for.
 //
+//   5. NO STALE SKILL PREFIX. The plugin was renamed from `galy` to `bg` when the brand became
+//      B.Galy: its skills answer to `/bg:<skill>`, and the marketplace declares the rename so
+//      installed workstations follow. A skill that still tells its reader to run `galy:adapt`
+//      sends them to a name that no longer exists, and the harness answers `plugin-not-found`,
+//      which reads as a broken installation rather than a stale line. The MCP server is still
+//      called `galy` and its tools `mcp__galy__*`: that name did not move, and is not matched.
+//
 // Exit code 0 = every invariant holds, 1 = at least one does not.
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -108,6 +115,14 @@ const FORBIDDEN = [
     pattern: /^\s*\$?\s*npx\s+(-y\s+)?galy-setup\b/m,
     why: "`npx galy-setup` — that package is published on no registry and npm answers E404. Use `npx -y github:b-galy/agent-kit`.",
   },
+  {
+    // A skill or agent reference takes one of two written forms: backticked (`galy:adapt`) or
+    // slash-invoked (/galy:analyse). Neither the MCP server (`galy`, `mcp__galy__*`), nor the
+    // CLI's own error prefix (`galy: message`), nor the managed-block markers written into a
+    // customer's CLAUDE.md (`<!-- galy:begin -->`) take those forms, so none of them is matched.
+    pattern: /(`|\/)galy:[a-z][a-z-]*/,
+    why: "the plugin's former name as a skill prefix. The plugin is `bg` since the brand became B.Galy: write `bg:<skill>` and `/bg:<skill>`.",
+  },
 ];
 
 const SELF = join(ROOT, "scripts", "validate.mjs");
@@ -131,4 +146,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`✓ ${skills.length} skills conform, no instance address, no stale repository name, no command that does not exist.`);
+console.log(`✓ ${skills.length} skills conform, no instance address, no stale repository name, no command that does not exist, no stale skill prefix.`);

@@ -68,7 +68,7 @@ check, concrete enough to run without you.
 
 ### 6. Hand it over
 
-Use `galy:ship`. It commits in the house style, opens the pull request, runs the self-review
+Use `bg:ship`. It commits in the house style, opens the pull request, runs the self-review
 panel and fixes what it finds.
 
 **Where it hands over is the user's decision, and they have already made it.** Apply
@@ -90,7 +90,7 @@ bar, or on `always-manual`, you stop and wait however sure you feel. A fix that 
 bar says so in the pull request rather than slipping through on a good mood.
 
 **The kit itself still merges nothing and deploys nothing.** That is a documented boundary, not a
-gap: `auto-merge` means you hand over to the process they already have — the one `galy:adapt`
+gap: `auto-merge` means you hand over to the process they already have — the one `bg:adapt`
 wrote against their pipeline — and `merge-and-release` means you hand over twice. Never merge
 because the checks went green, never because the user said "vas-y" about an earlier step, and
 never because a setting sounded like permission to do it yourself.

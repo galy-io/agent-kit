@@ -9,7 +9,7 @@ tools: Read, Glob, Grep, Bash, mcp__galy__maturity_challenge
 You observe five criteria: `tool_contract`, `scheduled_loop_fixes`, `invariants_monitored`,
 `verified_on_user_surface`, `effect_measured`.
 
-`strategy_in_system` is **not** yours: `galy:project-management` owns it, because where strategy
+`strategy_in_system` is **not** yours: `bg:project-management` owns it, because where strategy
 lives is a project-management fact and it is looking there anyway.
 
 Yours is the widest span — one criterion from level 2 and the four of level 5.

@@ -45,7 +45,7 @@ host. A guessed host does not fail loudly — it fails as a `401` that reads lik
 
 ```
 claude plugin marketplace add b-galy/agent-kit
-claude plugin install galy
+claude plugin install bg@galy
 ```
 
 The plugin declares no MCP server of its own, so it has nothing to connect to yet. Open your agent in
@@ -232,7 +232,7 @@ What the projection currently declares missing:
 | Capability | Where | What a Codex session does instead |
 |---|---|---|
 | `AskUserQuestion` | `audit` | Ask in plain text with numbered options and wait — never assume a default |
-| the `galy:` namespace | `adapt`, `audit`, `bug-fix`, `connect`, `autonomy` | One flat namespace: drop the prefix; a `galy:<agent>` is a Codex subagent, a `galy:<skill>` a Codex skill |
+| the `bg:` namespace | `adapt`, `audit`, `bug-fix`, `connect`, `autonomy` | One flat namespace: drop the prefix; a `bg:<agent>` is a Codex subagent, a `bg:<skill>` a Codex skill |
 | `${CLAUDE_PLUGIN_ROOT}` | 8 skills | Read the file from `.agents/skills/` relative to the repository |
 | `CronCreate` | `feature-implement` | A scheduled task on the host, with a written stop condition |
 
