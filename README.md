@@ -25,7 +25,7 @@ You are connecting *your assistant* to *your Galy workspace* — not giving Galy
 ### Option A — one command (recommended)
 
 ```
-npx -y github:galy-io/agent-kit <your-galy-token> --endpoint https://<your-workspace>.galy.cloud
+npx -y github:b-galy/agent-kit <your-galy-token> --endpoint https://<your-workspace>.galy.cloud
 ```
 
 Both values are on one page in Galy — **Connect my agent**, in the top bar of any screen — which prints
@@ -44,7 +44,7 @@ host. A guessed host does not fail loudly — it fails as a `401` that reads lik
 ### Option B — via the plugin marketplace
 
 ```
-claude plugin marketplace add galy-io/agent-kit
+claude plugin marketplace add b-galy/agent-kit
 claude plugin install galy
 ```
 
@@ -254,7 +254,7 @@ galy/
   contract/pm-v1.json             # the project-management tool + REST contract
   contract/conformance/           # the outward-only conformance suite (MCP + REST)
   bin/galy.mjs                    # the galy CLI
-package.json                      # makes the repo itself runnable: npx -y github:galy-io/agent-kit
+package.json                      # makes the repo itself runnable: npx -y github:b-galy/agent-kit
 setup/setup.mjs                   # the one-command setup
 scripts/build-codex.mjs           # projection into the layouts Codex reads (gitignored output)
 ```
