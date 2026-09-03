@@ -34,7 +34,7 @@ workspace reaches it and mints **their own** token: a borrowed one would attribu
 every access-log line to somebody else.
 
 It installs the plugin, registers the MCP endpoint **for that project only** (address and token stored
-literally in Claude Code's local scope, outside your repository), writes `.galy/config.json` for the
+literally in Claude Code's local scope, outside your repository), writes `.bg/config.json` for the
 CLI, gitignores it, and proves the connection before saying it worked — by shaking hands with `/mcp`,
 the door your assistant will actually use, rather than with the REST surface it will not.
 
@@ -45,8 +45,12 @@ host. A guessed host does not fail loudly — it fails as a `401` that reads lik
 
 ```
 claude plugin marketplace add b-galy/agent-kit
-claude plugin install bg@galy
+claude plugin install bg@b-galy
 ```
+
+**Installed while the marketplace was still called `galy`?** A workstation keys the plugin by the
+marketplace's name, so the old entry stays and keeps serving its cached copy. Re-run the setup command
+above, or by hand: `claude plugin marketplace remove galy`, then the two lines of option B.
 
 The plugin declares no MCP server of its own, so it has nothing to connect to yet. Open your agent in
 your repository and it will say so and point you at the `connect` skill — or run the `galy-setup`
@@ -62,7 +66,7 @@ copy per client. What it does not do is arrive the same second: your agent refre
 cache on its own schedule. To pull the current state right now:
 
 ```
-claude plugin marketplace update galy
+claude plugin marketplace update b-galy
 ```
 
 ## It says nothing until you ask
@@ -133,7 +137,7 @@ or does it stop and ask you?
 Two layers decide, and the top one wins: your **administrator's policy** for the whole workspace —
 `allow`, `deny`, or `user_choice`, set per skill and per option — and, under `user_choice`, **your
 own preference**. Both live on your Galy account, so they follow you from one checkout to the next;
-a local `.galy/workflow-defaults.json` mirrors the user layer for headless runs, and is never
+a local `.bg/workflow-defaults.json` mirrors the user layer for headless runs, and is never
 committed.
 
 Ask "quels réglages Galy sont actifs ?" and the `workflows` skill shows the table, says who decided
@@ -185,20 +189,20 @@ Eighteen skills that take a need from idea to shipped, each driven by the Galy o
 The kit **stops at "PR ready"** on purpose. Merging and deploying stay with your own CI/process — a
 documented extension point, not a gap.
 
-## The `galy` CLI
+## The `bg` CLI
 
 A shell-friendly companion to the MCP tools — search work items, read compact JSON cards, and pull/push
 the large markdown bodies of briefs and specs as local files:
 
 ```
-galy search "seller onboarding"
-galy brief 12
-galy spec 42
-galy content pull feature-spec 42     # → .tmp/galy-content/feature-spec/42.md
-galy content push feature-spec 42     # after you edit the buffer
+bg search "seller onboarding"
+bg brief 12
+bg spec 42
+bg content pull feature-spec 42     # → .tmp/galy-content/feature-spec/42.md
+bg content push feature-spec 42     # after you edit the buffer
 ```
 
-It reads its config from `GALY_ENDPOINT` / `GALY_TOKEN` or `.galy/config.json`. Like the tools, it only
+It reads its config from `GALY_ENDPOINT` / `GALY_TOKEN` or `.bg/config.json`. Like the tools, it only
 carries work items and their text — never your source.
 
 ## More than one harness
@@ -253,7 +257,7 @@ galy/
   instructions/                   # shared conventions the skills reference
   contract/pm-v1.json             # the project-management tool + REST contract
   contract/conformance/           # the outward-only conformance suite (MCP + REST)
-  bin/galy.mjs                    # the galy CLI
+  bin/bg.mjs                      # the bg CLI
 package.json                      # makes the repo itself runnable: npx -y github:b-galy/agent-kit
 setup/setup.mjs                   # the one-command setup
 scripts/build-codex.mjs           # projection into the layouts Codex reads (gitignored output)

@@ -127,7 +127,10 @@ on n'y ajoute rien.
 
 Three properties, each load-bearing:
 
-- **Delimited**, so a later pass updates it without touching a word the team wrote.
+- **Delimited**, so a later pass updates it without touching a word the team wrote. The markers
+  keep the name `galy` on purpose, although the plugin is `bg` now: blocks already written in
+  customers' files carry it, and a later pass finds them by that name. Renaming the marker would
+  orphan every one of them.
 - **Short.** It joins a file every session reads in full; anything long gets skipped, and a
   doctrine nobody finishes is a doctrine nobody applies.
 - **It names their system first**, Galy second. The reader must see their own world described
@@ -181,7 +184,7 @@ rules whose violation costs real data.
 Under `.claude/skills/<name>/SKILL.md`, one directory per skill, each a rewrite of the kit's
 generic version with:
 
-- **their** server name and verbs, not `mcp__galy__*`, wherever the system of record is theirs;
+- **their** server name and verbs, not `mcp__bg__*`, wherever the system of record is theirs;
 - **their** id shapes, so a reference the user pastes is routed to the right system;
 - **their** branch and commit conventions, read from `git log`, not invented;
 - a first line saying which system this skill writes to. A skill that silently writes to the
@@ -237,12 +240,12 @@ The skills are theirs and speak only of theirs.
 
 Three of these answers are settings, not facts, and a setting changes without a pull request:
 `ship`/`release_trigger`, `ship`/`release_hold`, `ship`/`rollback_mode`. Write the generated
-skills to **resolve them at run time** — `mcp__galy__workflow_policy_resolve` — instead of
+skills to **resolve them at run time** — `mcp__bg__workflow_policy_resolve` — instead of
 freezing today's answer in their text. A team that changes its mind on the settings page and
 sees nothing change has been given a control that is not one.
 
 **Read the option names and their values from the instance, never from memory:**
-`mcp__galy__workflow_catalog_list` says what *this* instance actually knows. An option it does
+`mcp__bg__workflow_catalog_list` says what *this* instance actually knows. An option it does
 not know is a setting nothing will ever honour, and a value it does not accept is one it will
 refuse to store — so a name typed from memory produces a page that toggles nothing. That has
 already happened twice, in both directions, in one hour.
@@ -259,7 +262,7 @@ invention in the one place inventions cost most.
   back yet**. Recording the hole is the point; it is what stops the next session inventing one.
 
 Ask once, for the three together, in the user's language, and say where the observation came
-from. On a yes, write them with `mcp__galy__workflow_default_set` — canonical values, exactly as
+from. On a yes, write them with `mcp__bg__workflow_default_set` — canonical values, exactly as
 the catalogue spells them, never a label you displayed. On a no, or on silence, write nothing and
 say in one line what stayed unset: an unanswered question is not an answer.
 

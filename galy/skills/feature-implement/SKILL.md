@@ -24,22 +24,22 @@ watchdog never fires — ideal.
 
 ## Steps
 
-1. **Lock the spec.** `mcp__galy__whoami` → userId. `mcp__galy__feature_spec_pick(specId, userId)`.
+1. **Lock the spec.** `mcp__bg__whoami` → userId. `mcp__bg__feature_spec_pick(specId, userId)`.
    `success:false` → it is held by `current_lead_name`; stop, ask them to release it. (Skip on `--continue`.)
 2. **Arm the watchdog once** (skip on `--continue` or if `CronList` already shows one for this spec):
    `CronCreate(cron: "7,27,47 * * * *", prompt: "/feature-implement <specId> --continue", durable: true)`.
-3. **Read the spec.** `mcp__galy__feature_spec_get(specId)` for phases (id + status), risks, acceptance
-   tests. `galy content pull feature-spec <specId>` then read the buffer for the solution body. Skip
+3. **Read the spec.** `mcp__bg__feature_spec_get(specId)` for phases (id + status), risks, acceptance
+   tests. `bg content pull feature-spec <specId>` then read the buffer for the solution body. Skip
    `Done` phases; finish `InProgress` ones first; target `NotStarted` next.
 4. **Implement phase by phase, same turn.** For each phase:
-   - Mark it `mcp__galy__feature_spec_set_phase_status(phaseId, status="InProgress")`.
+   - Mark it `mcp__bg__feature_spec_set_phase_status(phaseId, status="InProgress")`.
    - Write the code following the repo's own conventions (its `CLAUDE.md`/`AGENTS.md`). Cut PRs at
      natural seams; a small spec is a single PR.
    - Re-read the phase plan; if the implementation deviated, record it via
-     `mcp__galy__feature_spec_update_phase(phaseId, actionPlanMd=<updated with a "deviation" note>)` —
+     `mcp__bg__feature_spec_update_phase(phaseId, actionPlanMd=<updated with a "deviation" note>)` —
      never silence a deviation.
    - Build + run the change to prove it works (not just green tests). On failure, fix and retry.
-   - Mark it `mcp__galy__feature_spec_set_phase_status(phaseId, status="Done", prUrl=<your PR url>)`.
+   - Mark it `mcp__bg__feature_spec_set_phase_status(phaseId, status="Done", prUrl=<your PR url>)`.
 5. **Verify against acceptance tests.** Walk the spec's acceptance tests (see
    `${CLAUDE_PLUGIN_ROOT}/instructions/acceptance-criteria.md`); set each status; screenshot visual blocks.
 6. **PR ready.** Invoke `ship` to open/finish the PR through the self-review panel. Apply the
@@ -49,7 +49,7 @@ watchdog never fires — ideal.
    releases for you** — the value says where the loop stops handing over, never what Galy does. On a
    chain where merging already ships, the last two describe the same thing, and `ship`/`release_trigger`
    is what says so.
-7. **Close.** `mcp__galy__feature_spec_complete(specId, prUrl)`. Adjust the brief's follow-up horizon if
+7. **Close.** `mcp__bg__feature_spec_complete(specId, prUrl)`. Adjust the brief's follow-up horizon if
    delivery slipped (follow-up conventions). Then invoke `retro` (additive, never blocking).
 8. **Disarm the watchdog last** — `CronList` → `CronDelete` — only after the report is delivered.
 

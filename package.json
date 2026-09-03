@@ -1,5 +1,5 @@
 {
-  "name": "@galy/agent-kit-repo",
+  "name": "@b-galy/agent-kit-repo",
   "version": "1.0.0",
   "description": "Galy Agent Kit — one-command setup, runnable straight from this repository with npx.",
   "type": "module",

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// galy — cross-platform CLI for the Galy project-management API.
+// bg — cross-platform CLI for the Galy project-management API.
 //
 // Talks REST to /api/pm/* on your Galy endpoint. Mirrors the read side of the MCP
 // verbs your agent uses, but is shell-friendly: search work items, read
@@ -12,7 +12,9 @@
 //
 // Config resolution (first hit wins per field):
 //   env GALY_ENDPOINT / GALY_TOKEN
-//   .galy/config.json  ({ "endpoint": "...", "token": "..." }) searched upward from cwd
+//   .bg/config.json    ({ "endpoint": "...", "token": "..." }) searched upward from cwd;
+//   .galy/config.json  is the folder's former name, still read after it so a token written
+//                      before the rename keeps working
 //
 // Content buffer: .tmp/galy-content/<type>/<id>.md — raw markdown whose sections are
 //   delimited by <!-- @field <name> -->. The server composes/parses it; the CLI
@@ -26,11 +28,11 @@
 //   PUT  /api/pm/content/<type>/<id>/body  <- { "Body": "<markdown>" }
 //
 // Commands:
-//   galy search <query>
-//   galy brief <id>
-//   galy spec <id>
-//   galy content pull <type> <id>      # type = feature-brief | feature-spec
-//   galy content push <type> <id>
+//   bg search <query>
+//   bg brief <id>
+//   bg spec <id>
+//   bg content pull <type> <id>        # type = feature-brief | feature-spec
+//   bg content push <type> <id>
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -38,11 +40,19 @@ import { dirname, join, resolve } from "node:path";
 const TYPES = new Set(["feature-brief", "feature-spec"]);
 
 // ── Config ────────────────────────────────────────────────────────────────
+// `.bg/` is the folder; `.galy/` is what it was called before the brand became B.Galy. A setup run
+// before the rename left its token there, and a CLI that stopped reading it would answer "No token"
+// on a workstation that has one — so the former name stays readable, after the new one, at each
+// level of the walk up.
+const CONFIG_DIRS = [".bg", ".galy"];
+
 function findConfig(startDir) {
   let dir = resolve(startDir);
   for (;;) {
-    const candidate = join(dir, ".galy", "config.json");
-    if (existsSync(candidate)) return candidate;
+    for (const folder of CONFIG_DIRS) {
+      const candidate = join(dir, folder, "config.json");
+      if (existsSync(candidate)) return candidate;
+    }
     const parent = dirname(dir);
     if (parent === dir) return null;
     dir = parent;
@@ -58,8 +68,8 @@ function loadConfig() {
   }
   let endpoint = process.env.GALY_ENDPOINT || fromFile.endpoint;
   const token = process.env.GALY_TOKEN || fromFile.token;
-  if (!endpoint) die("No endpoint. Set GALY_ENDPOINT or .galy/config.json { \"endpoint\": ... }.");
-  if (!token) die("No token. Set GALY_TOKEN or .galy/config.json { \"token\": ... }. Get one from galy.io → Settings → Connect your assistant.");
+  if (!endpoint) die("No endpoint. Set GALY_ENDPOINT or .bg/config.json { \"endpoint\": ... }.");
+  if (!token) die("No token. Set GALY_TOKEN or .bg/config.json { \"token\": ... }. Get one from galy.io → Settings → Connect your assistant.");
   endpoint = endpoint.replace(/\/+$/, "").replace(/\/mcp$/i, ""); // tolerate a pasted MCP url
   return { endpoint, token };
 }
@@ -94,26 +104,26 @@ function bufferPath(type, id) {
 // ── Commands ──────────────────────────────────────────────────────────────
 async function cmdSearch(args) {
   const q = args._[0];
-  if (!q) die("Usage: galy search <query>");
+  if (!q) die("Usage: bg search <query>");
   print(await request("GET", `/api/pm/search?q=${encodeURIComponent(q)}`));
 }
 
 async function cmdBrief(args) {
   const id = args._[0];
-  if (!id) die("Usage: galy brief <id>");
+  if (!id) die("Usage: bg brief <id>");
   print(await request("GET", `/api/pm/brief/${encodeURIComponent(id)}`));
 }
 
 async function cmdSpec(args) {
   const id = args._[0];
-  if (!id) die("Usage: galy spec <id>");
+  if (!id) die("Usage: bg spec <id>");
   print(await request("GET", `/api/pm/spec/${encodeURIComponent(id)}`));
 }
 
 async function cmdContent(args) {
   const [action, type, id] = args._;
   if (!["pull", "push"].includes(action) || !TYPES.has(type) || !id) {
-    die("Usage: galy content pull|push <type> <id>   (type = feature-brief | feature-spec)");
+    die("Usage: bg content pull|push <type> <id>   (type = feature-brief | feature-spec)");
   }
   const path = bufferPath(type, id);
   const route = `/api/pm/content/${type}/${encodeURIComponent(id)}/body`;
@@ -127,7 +137,7 @@ async function cmdContent(args) {
   }
 
   // push — send the buffer verbatim; the server parses the <!-- @field --> sections.
-  if (!existsSync(path)) die(`No buffer at ${path}. Run 'galy content pull ${type} ${id}' first.`);
+  if (!existsSync(path)) die(`No buffer at ${path}. Run 'bg content pull ${type} ${id}' first.`);
   const body = readFileSync(path, "utf8");
   await request("PUT", route, { json: { Body: body }, raw: true });
   console.log(`Pushed ${type} ${id}`);
@@ -149,17 +159,17 @@ function parseArgs(argv) {
 }
 
 function print(obj) { console.log(JSON.stringify(obj, null, 2)); }
-function die(msg) { console.error(`galy: ${msg}`); process.exit(1); }
+function die(msg) { console.error(`bg: ${msg}`); process.exit(1); }
 
-const HELP = `galy — Galy project-management CLI
+const HELP = `bg — Galy project-management CLI
 
-  galy search <query>               # briefs + specs matching the query
-  galy brief <id>                   # a brief with its user stories
-  galy spec <id>                    # a spec with its phases, risks, acceptance tests
-  galy content pull <type> <id>     # type = feature-brief | feature-spec
-  galy content push <type> <id>
+  bg search <query>                 # briefs + specs matching the query
+  bg brief <id>                     # a brief with its user stories
+  bg spec <id>                      # a spec with its phases, risks, acceptance tests
+  bg content pull <type> <id>       # type = feature-brief | feature-spec
+  bg content push <type> <id>
 
-Config: env GALY_ENDPOINT / GALY_TOKEN, or .galy/config.json { "endpoint", "token" }.
+Config: env GALY_ENDPOINT / GALY_TOKEN, or .bg/config.json { "endpoint", "token" }.
 Galy never sees your code — this CLI only carries work items and their text.`;
 
 async function main() {
@@ -174,7 +184,7 @@ async function main() {
     case "-h":
     case "--help":
     case "help": return console.log(HELP);
-    default: die(`Unknown command '${cmd}'. Run 'galy help'.`);
+    default: die(`Unknown command '${cmd}'. Run 'bg help'.`);
   }
 }
 

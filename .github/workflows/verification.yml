@@ -33,5 +33,5 @@ jobs:
       - name: Les scripts s'analysent
         run: |
           node --check setup/setup.mjs
-          node --check galy/bin/galy.mjs
+          node --check galy/bin/bg.mjs
           node --check scripts/validate.mjs

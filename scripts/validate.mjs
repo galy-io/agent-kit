@@ -27,12 +27,18 @@
 //      first developer to type it concluded the product did not exist. It had already been
 //      corrected on the screen — and stayed wrong here, which is precisely what a check is for.
 //
-//   5. NO STALE SKILL PREFIX. The plugin was renamed from `galy` to `bg` when the brand became
-//      B.Galy: its skills answer to `/bg:<skill>`, and the marketplace declares the rename so
-//      installed workstations follow. A skill that still tells its reader to run `galy:adapt`
-//      sends them to a name that no longer exists, and the harness answers `plugin-not-found`,
-//      which reads as a broken installation rather than a stale line. The MCP server is still
-//      called `galy` and its tools `mcp__galy__*`: that name did not move, and is not matched.
+//   5. NO STALE NAMESPACE. The plugin was renamed from `galy` to `bg` when the brand became
+//      B.Galy, and the rest of the agent side followed, one name for all of it: the marketplace
+//      is `b-galy`, so the plugin installs as `bg@b-galy`; the MCP server is registered as `bg`,
+//      so the tools the agent sees are `mcp__bg__<tool>`; the CLI is `bg` and its folder `.bg/`.
+//      None of the old names fails loudly. A skill that still says `galy:adapt` gets
+//      `plugin-not-found`, which reads as a broken installation rather than a stale line; a skill
+//      that names `mcp__galy__whoami` sends the agent after a tool nobody serves, in front of a
+//      user, mid-ritual; `bg@galy` names a marketplace entry a fresh workstation does not have,
+//      and on an old one reinstalls from a cache that no longer follows this repository. What
+//      does NOT move, and is therefore not matched: the plugin's source folder `./galy`, the
+//      `renames` mapping that carries the plugin rename, the product's name and addresses, and
+//      the `<!-- galy:begin -->` markers already written into customers' files.
 //
 // Exit code 0 = every invariant holds, 1 = at least one does not.
 
@@ -44,11 +50,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
 const fail = (what, detail) => failures.push(`${what}\n    ${detail}`);
 
-/** Every file under `dir`, skipping .git and node_modules. */
+/** Every file under `dir`, skipping .git, node_modules and the ignored working folder .tmp. */
 function walk(dir) {
   const out = [];
   for (const entry of readdirSync(dir)) {
-    if (entry === ".git" || entry === "node_modules") continue;
+    // `.tmp/` is the working folder the repository ignores: the notes and scratch scripts a
+    // session writes there are not the published artefact, and a note that quotes a forbidden
+    // name in order to explain why it is forbidden would fail the check for the wrong reason.
+    if (entry === ".git" || entry === "node_modules" || entry === ".tmp") continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) out.push(...walk(full));
     else out.push(full);
@@ -117,11 +126,31 @@ const FORBIDDEN = [
   },
   {
     // A skill or agent reference takes one of two written forms: backticked (`galy:adapt`) or
-    // slash-invoked (/galy:analyse). Neither the MCP server (`galy`, `mcp__galy__*`), nor the
-    // CLI's own error prefix (`galy: message`), nor the managed-block markers written into a
-    // customer's CLAUDE.md (`<!-- galy:begin -->`) take those forms, so none of them is matched.
+    // slash-invoked (/galy:analyse). The managed-block markers written into a customer's
+    // CLAUDE.md (`<!-- galy:begin -->`) take neither form, and they keep that name on purpose —
+    // renaming them would orphan every block already written — so they are not matched.
     pattern: /(`|\/)galy:[a-z][a-z-]*/,
     why: "the plugin's former name as a skill prefix. The plugin is `bg` since the brand became B.Galy: write `bg:<skill>` and `/bg:<skill>`.",
+  },
+  {
+    // The MCP server moved with the plugin: it is registered as `bg`, and the harness names its
+    // tools after the alias. A tool named after the former alias is a tool nobody serves.
+    pattern: /mcp__galy__/,
+    why: "the MCP server's former alias in a tool name. The server is registered as `bg`, so the tools your agent sees are `mcp__bg__<tool>`; a skill that names `mcp__galy__<tool>` sends it after a tool nobody serves — in front of a user, mid-ritual.",
+  },
+  {
+    // The install identifier is `<plugin>@<marketplace>`, and the marketplace is `b-galy`. Both
+    // halves of the old spelling are refused: `galy@galy` predates the plugin rename, `bg@galy`
+    // predates the marketplace's.
+    pattern: /\b(bg|galy)@galy\b/,
+    why: "the marketplace's former name in an install identifier. The marketplace is `b-galy`: install `bg@b-galy`. On a fresh workstation `bg@galy` names an entry that does not exist; on an old one it reinstalls from a cache that no longer follows this repository.",
+  },
+  {
+    // `claude mcp add … galy` registers the server under the alias the kit stopped using; the
+    // skills then name tools under `bg` that the harness serves under `galy`. Only `add` is
+    // matched: `claude mcp remove galy` is precisely what setup and `connect` say to do.
+    pattern: /claude\s+mcp\s+add\b[^\n]*\sgaly(\s|$)/m,
+    why: "a registration of the MCP server under its former alias. Register it as `bg`: `claude mcp add --scope local bg …`. Two servers serving the same tools under two names shows the agent every tool twice — the doubt `connect` exists to clear.",
   },
 ];
 
@@ -146,4 +175,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`✓ ${skills.length} skills conform, no instance address, no stale repository name, no command that does not exist, no stale skill prefix.`);
+console.log(`✓ ${skills.length} skills conform, no instance address, no stale repository name, no command that does not exist, no stale namespace.`);
