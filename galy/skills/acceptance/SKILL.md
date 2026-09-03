@@ -87,8 +87,8 @@ the file and in Galy; what you PRINT is theirs.
 ## Taking the remarks
 
 Every line the person types that is not a mode is a remark. **Write it to the file first**, push it to
-Galy second, then acknowledge in a single short line — the number and one word saying it is recorded,
-in their language — and nothing else. No restating it back in your own words, no plan, no estimate, and
+Galy second, then acknowledge in a single short line — the number, the remark's first words, and one
+word saying it is recorded, in their language — and nothing else. No restating it back in your own words, no plan, no estimate, and
 no mention of the push either way.
 
 ## Drain
@@ -114,13 +114,15 @@ Then pick the next oldest. Repeat until nothing is `pending`, and go back to tak
 knowingly decided not to fix is readable nowhere else, and it is the half nobody can reconstruct three
 months later. `failed` is for something you genuinely could not fix, and the reason goes there too.
 
-Long or genuinely independent items go to background sub-agents, launched together, while you keep
-coordinating and committing. Short items stay inline — spawning an agent per remark costs more than it
-saves.
+Short items stay inline — an agent per remark costs more than it saves. A long item, judged before
+opening the code, is always delegated to a background agent, so that the next remark finds you free.
+Related long items can queue on the same agent; different ones take another; independent ones launch
+together.
 
 ## status
 
-Print one compact block: done (with commits) · in progress · pending · set aside · open questions.
+Print one compact block, every item named by its first words: done (with commits) · in progress ·
+pending · set aside · open questions.
 Nothing else — **unless remarks are still `pushed: false`**, in which case say how many, on one line.
 That number is the only thing standing between a pass and a trace nobody will find.
 
