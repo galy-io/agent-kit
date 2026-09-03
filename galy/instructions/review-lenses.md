@@ -12,12 +12,21 @@ context — spawns the reviewers.
 ## Mode detection
 
 Look at the changed files. If **every** changed file is non-code (docs, markdown, config text) → **light
-review** (1 generalist agent). Otherwise → **panel** (4 lenses).
+review** (1 generalist agent). Otherwise → **panel** (4 lenses), plus the **design** lens on a visual
+diff.
+
+## Visual diff (the design trigger)
+
+Computed once, with the mode. A diff is **visual** when it touches a stylesheet, an image or an icon
+(`*.less`, `*.scss`, `*.css`, `*.svg`), or when a changed view, template or script adds or removes
+markup — a tag, a `class=`, a `style=`, a `classList`, an `innerHTML`. A view changed only on a
+translated string, a binding or a model declaration is not visual, and neither is anything in a
+backend file, whatever it ends up rendering. No visual diff → no design lens.
 
 ## Findings schema
 
 Each lens returns JSON `{ findings: [...] }`, one entry =
-- `lens` — correctness | security | conventions | perf
+- `lens` — correctness | security | conventions | perf | design
 - `severity` — blocker | warning | nit
 - `file` / `line`
 - `title` — one line
@@ -37,6 +46,16 @@ conventions (its `CLAUDE.md`/`AGENTS.md`). Each is **adversarial — find proble
 3. **conventions** — violations of the repo's own conventions and style; invented APIs; over-commented
    code (a new comment is a violation unless critical to understanding, ≤14 words, no ticket ids).
 4. **perf** — N+1 queries, unnecessary materialization, work in a loop, large allocations on hot paths.
+5. **design** — on a visual diff only: the `design-reviewer` agent of this kit, spawned in the same
+   block, with the repository's design system (its tokens, its type scale, its component boards, the
+   root paragraph that names them) pasted inline as its conventions. It reads the diff for a size, a
+   face, a colour or a component the design system does not know, then drives the rendered pages when
+   something serves the change. A mockup brings the words and the order of the sections; the design
+   system brings everything else, and this lens is where a mockup's own look gets stopped at the door.
+
+**A lens that returns no findings is not a pass**: retry it once, then run that lens inline yourself.
+The same when a lens cannot be spawned at all — a missing lens is never a reason to proceed as if it
+had approved the diff, and never a reason to flag a human either.
 
 Also apply, on the conventions/correctness lenses: is there a simpler, more idiomatic approach? Will it
 hold as the codebase grows? Are edge cases and error paths covered?
