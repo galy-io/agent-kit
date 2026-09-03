@@ -16,7 +16,8 @@ merges** — merging is your own CI/process (the extension point below).
 2. **Open the PR** (draft) against the base branch, with a concise body: what changed, why, how it was
    verified. Link the Galy spec if this ships one.
 3. **Run the review panel** per `${CLAUDE_PLUGIN_ROOT}/instructions/review-lenses.md`:
-   - Detect mode (light for docs-only, panel of 4 lenses otherwise).
+   - Detect mode (light for docs-only, panel of 4 lenses otherwise) — and, on a visual diff, the
+     **design** lens joins the panel: the `design-reviewer` agent, given the repository's design system.
    - Spawn the lenses as fresh sub-agents over the full diff + the changed files read in full + the
      repo's own conventions. Each is adversarial — find problems, never validate.
    - Dedup + confirm each finding by re-reading the cited lines; drop false positives.
