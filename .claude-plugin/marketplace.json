@@ -1,11 +1,16 @@
 {
   "name": "galy",
-  "owner": { "name": "Galy" },
+  "owner": {
+    "name": "B.Galy"
+  },
   "plugins": [
     {
-      "name": "galy",
+      "name": "bg",
       "source": "./galy",
-      "description": "Galy project-management kit: strategy → briefs → specs → code, driven by your own agent."
+      "description": "B.Galy project-management kit: strategy → briefs → specs → code, driven by your own agent. Skills answer to /bg:<skill>."
     }
-  ]
+  ],
+  "renames": {
+    "galy": "bg"
+  }
 }

@@ -104,16 +104,16 @@ function installPlugin(haveClaude) {
     warn("`claude` not found on PATH — skipping the automatic install.");
     console.log("    Install it yourself later with:");
     console.log(`      claude plugin marketplace add ${MARKETPLACE}`);
-    console.log("      claude plugin install galy");
+    console.log("      claude plugin install bg@galy");
     return;
   }
   const run = (args) => runClaude(args, { stdio: "inherit" }).status === 0;
-  if (run(["plugin", "marketplace", "add", MARKETPLACE]) && run(["plugin", "install", "galy"])) {
+  if (run(["plugin", "marketplace", "add", MARKETPLACE]) && run(["plugin", "install", "bg@galy"])) {
     ok("plugin installed.");
   } else {
     warn("the Claude CLI reported an error — finish the install by hand:");
     console.log(`      claude plugin marketplace add ${MARKETPLACE}`);
-    console.log("      claude plugin install galy");
+    console.log("      claude plugin install bg@galy");
   }
 }
 

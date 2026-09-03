@@ -62,10 +62,10 @@ const DEGRADATIONS = [
       "continuing. Do NOT assume a default: the point of the question is that the user decides.",
   },
   {
-    id: "the `galy:` namespace",
-    pattern: /`galy:[a-z-]+`/,
-    advice: "Codex has one flat namespace: drop the `galy:` prefix. A `galy:<agent>` is a Codex " +
-      "subagent - prefer the matching profile in `.codex/agents/` - and a `galy:<skill>` is a " +
+    id: "the `bg:` namespace",
+    pattern: /`bg:[a-z-]+`/,
+    advice: "Codex has one flat namespace: drop the `bg:` prefix. A `bg:<agent>` is a Codex " +
+      "subagent - prefer the matching profile in `.codex/agents/` - and a `bg:<skill>` is a " +
       "Codex skill invoked by name.",
   },
   {

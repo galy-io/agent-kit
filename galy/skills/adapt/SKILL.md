@@ -30,12 +30,12 @@ pages in the product. Putting files in a repository has one too, and it is the p
 
 ## What it needs before it starts
 
-The **binding proposal** from `galy:project-management` — which system owns briefs, specs,
+The **binding proposal** from `bg:project-management` — which system owns briefs, specs,
 tickets and strategy; what the id shapes are; which commands already exist. If it was not
 produced in this session, run that agent first. Adapting without it means guessing at their
 method, and a wrong guess lands in a pull request with your name on it.
 
-And, for the delivery half only, the **named facts** from `galy:delivery`: the chain file and
+And, for the delivery half only, the **named facts** from `bg:delivery`: the chain file and
 what triggers it, whether a push to the default branch deploys, whether that branch is
 protected, whether anything stops two releases at once, where going back is written down, how a
 change is actually merged, and the commands that already exist.
@@ -161,7 +161,7 @@ in it belong to whoever wrote them:
 
 5. **How a change reaches production here**, in three lines and a two-row routing table — the
    chain file and its trigger quoted from the file, whether merging is enough to ship, and how
-   going back is done. **Every line either carries a fact `galy:delivery` read, or says out loud
+   going back is done. **Every line either carries a fact `bg:delivery` read, or says out loud
    that it did not.** *« Votre chaîne se déclenche sur un push vers `main`, et je n'ai trouvé
    aucun retour arrière écrit »* is a good line. *« Suivez votre procédure de retour arrière »*
    is the failure: it sounds like doctrine and it is a guess.
@@ -193,7 +193,7 @@ twelve that need arguing about.
 ### 3. The two delivery skills, written against their chain
 
 Same rules as above, same collision handling, same directory. What changes is where the words
-come from: **not the kit's generic version, but the named facts `galy:delivery` came back with.**
+come from: **not the kit's generic version, but the named facts `bg:delivery` came back with.**
 There is no generic merge skill to adapt, because there is no generic way to merge.
 
 **Two skills, not one, and the split is the whole lesson.** It is proven on a repository of a
