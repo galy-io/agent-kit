@@ -4,14 +4,15 @@
 //   npx -y github:b-galy/agent-kit <token> --endpoint https://<your-workspace>.galy.cloud
 //
 // Does four things, in order, each best-effort with a clear message on failure:
-//   a) installs the plugin via the Claude CLI (marketplace add + install), or prints
-//      manual steps if `claude` isn't on PATH;
-//   b) registers the Galy MCP endpoint for THIS project, with the address and the token
-//      written literally into the local scope — so the connection does not depend on an
-//      environment variable that only one launcher knows how to set;
-//   c) writes .galy/config.json { endpoint, token } for the `galy` CLI, and makes sure the
-//      whole .galy/ directory is gitignored — neither the token nor the workflow mirror, which
-//      carries a consent decision, ever lands in a committable file;
+//   a) installs the plugin via the Claude CLI (marketplace add + install) — removing first a
+//      marketplace still registered under its former name, `galy` — or prints manual steps if
+//      `claude` isn't on PATH;
+//   b) registers the MCP endpoint for THIS project under the alias `bg`, with the address and
+//      the token written literally into the local scope — so the connection does not depend on
+//      an environment variable that only one launcher knows how to set;
+//   c) writes .bg/config.json { endpoint, token } for the `bg` CLI, and makes sure the whole
+//      .bg/ directory is gitignored — neither the token nor the workflow mirror, which carries
+//      a consent decision, ever lands in a committable file;
 //   d) smoke-tests the endpoint (GET /api/pm/search?q=ping) with the token.
 //
 // Why the local scope and not an env var. The kit used to ship a .mcp.json holding one
@@ -27,14 +28,34 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
+import { homedir } from "node:os";
 
 const MARKETPLACE = "b-galy/agent-kit";
-// The whole directory, not just config.json. `.galy/` also holds workflow-defaults.json, which
+
+// One namespace on the agent side, `bg` — and `b-galy` for what carries it. The marketplace was
+// declared as `galy` until the brand became B.Galy, and its name is not cosmetic: an installed
+// workstation keys its plugin cache by that name, so the entry does not follow a rename of the
+// file. It has to be removed, and setup does it (see installPlugin).
+const MARKETPLACE_NAME = "b-galy";
+const FORMER_MARKETPLACE_NAME = "galy";
+const PLUGIN = `bg@${MARKETPLACE_NAME}`;
+
+// The alias the MCP server is registered under: the tools your agent sees are `mcp__bg__<tool>`.
+// It was `galy` before the rename, and a previous setup may have left that entry behind.
+const MCP_ALIAS = "bg";
+const FORMER_MCP_ALIAS = "galy";
+
+// The config folder, and its name before the rename. The `bg` CLI still reads `.galy/config.json`
+// as a fallback, so nobody loses a token; setup writes the new folder only.
+const CONFIG_DIR = ".bg";
+const FORMER_CONFIG_DIR = ".galy";
+
+// The whole directory, not just config.json. `.bg/` also holds workflow-defaults.json, which
 // now carries a consent decision — whether the end of an onboarding sends a retrospective back
 // to Galy. A per-file ignore left that one tracked, so one developer's answer would have been
 // committed and applied to everyone who cloned. Ignoring the directory is the only version of
 // this that stays correct as the directory grows.
-const GITIGNORE_LINE = ".galy/";
+const GITIGNORE_LINE = `${CONFIG_DIR}/`;
 
 // How the Claude CLI is spelled depends on how it was installed, and guessing wrong is not a
 // loud failure: the two steps that matter — installing the plugin and registering the MCP
@@ -97,43 +118,95 @@ command, address already filled in — copy it from there rather than typing it.
 Galy never sees your code. This connects your assistant to your Galy workspace —
 it does not give Galy access to your repository.`;
 
+/**
+ * True when a marketplace named `galy` is known on this workstation AND points at this repository.
+ *
+ * Read from the CLI's own registry first (known_marketplaces.json under the config directory), then
+ * from `claude plugin marketplace list` when that file is not where we expect it — two readings, so
+ * a file that moves does not silently switch the migration off. A `galy` marketplace pointing
+ * anywhere else is somebody else's, and is left alone.
+ */
+function formerMarketplaceIsOurs() {
+  const configDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
+  let known = null;
+  try { known = JSON.parse(readFileSync(join(configDir, "plugins", "known_marketplaces.json"), "utf8")); }
+  catch { /* not there, or not readable: ask the CLI */ }
+  if (known !== null && typeof known === "object") {
+    const entry = known[FORMER_MARKETPLACE_NAME];
+    return entry !== undefined && /\/agent-kit(\.git)?$/i.test(String(entry?.source?.repo || entry?.source?.url || ""));
+  }
+
+  const listed = runClaude(["plugin", "marketplace", "list"], { encoding: "utf8" });
+  const lines = String(listed.stdout || "").split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].replace(/^[^A-Za-z0-9]+/, "").trim() !== FORMER_MARKETPLACE_NAME) continue;
+    const source = lines.slice(i + 1).find((l) => l.trim() !== "") || "";
+    return /agent-kit/i.test(source);
+  }
+  return false;
+}
+
 // (a) Install the plugin through the Claude CLI, if present.
+//
+// A workstation that installed the kit while the marketplace was still called `galy` keeps that
+// entry, keyed by name: adding `b-galy/agent-kit` again registers a SECOND marketplace, and the
+// old one goes on serving its cached copy under the former identifier. So the former entry is
+// removed first — the CLI uninstalls the plugins that came from it in the same motion, which is
+// exactly what we want here.
 function installPlugin(haveClaude) {
-  step("Installing the Galy plugin via the Claude CLI");
+  step("Installing the plugin via the Claude CLI");
+  const manual = () => {
+    console.log(`      claude plugin marketplace remove ${FORMER_MARKETPLACE_NAME}   # only if that entry exists`);
+    console.log(`      claude plugin marketplace add ${MARKETPLACE}`);
+    console.log(`      claude plugin install ${PLUGIN}`);
+  };
   if (!haveClaude) {
     warn("`claude` not found on PATH — skipping the automatic install.");
     console.log("    Install it yourself later with:");
-    console.log(`      claude plugin marketplace add ${MARKETPLACE}`);
-    console.log("      claude plugin install bg@galy");
+    manual();
     return;
   }
   const run = (args) => runClaude(args, { stdio: "inherit" }).status === 0;
-  if (run(["plugin", "marketplace", "add", MARKETPLACE]) && run(["plugin", "install", "bg@galy"])) {
+  if (formerMarketplaceIsOurs()) {
+    if (run(["plugin", "marketplace", "remove", FORMER_MARKETPLACE_NAME])) {
+      ok(`marketplace \`${FORMER_MARKETPLACE_NAME}\` — the former name — removed; \`${MARKETPLACE_NAME}\` replaces it.`);
+    } else {
+      warn(`could not remove the former marketplace \`${FORMER_MARKETPLACE_NAME}\`; the install below may land beside it.`);
+    }
+  }
+  if (run(["plugin", "marketplace", "add", MARKETPLACE]) && run(["plugin", "install", PLUGIN])) {
     ok("plugin installed.");
   } else {
     warn("the Claude CLI reported an error — finish the install by hand:");
-    console.log(`      claude plugin marketplace add ${MARKETPLACE}`);
-    console.log("      claude plugin install bg@galy");
+    manual();
   }
 }
 
 // (b) Register the MCP endpoint for this project, with literal values.
 function registerMcp(haveClaude, endpoint, token) {
-  step("Registering the Galy MCP endpoint for this project");
+  step(`Registering the MCP endpoint for this project, as \`${MCP_ALIAS}\``);
   const url = `${endpoint}/mcp`;
+  const manual = () => {
+    console.log(`      claude mcp add --scope local ${MCP_ALIAS} --transport http ${url} \\`);
+    console.log(`        --header "Authorization: Bearer <your-token>"`);
+  };
 
   if (!haveClaude) {
     warn("`claude` not found on PATH — register it yourself once it is installed:");
-    console.log(`      claude mcp add --scope local galy --transport http ${url} \\`);
-    console.log(`        --header "Authorization: Bearer <your-token>"`);
+    manual();
     return;
   }
 
-  // Re-running setup with a fresh token must replace the old entry, not collide with it.
-  runClaude(["mcp", "remove", "galy", "-s", "local"], { encoding: "utf8" });
+  // Re-running setup with a fresh token must replace the old entry, not collide with it. And the
+  // entry a setup run before the rename registered under the former alias goes too: two servers
+  // serving the same tools under two names shows the agent every tool twice, which is exactly the
+  // doubt the diagnosis table in `connect` exists to clear. Both removals are best-effort — an
+  // absent entry is the normal case, and its failure says nothing.
+  runClaude(["mcp", "remove", MCP_ALIAS, "-s", "local"], { encoding: "utf8" });
+  runClaude(["mcp", "remove", FORMER_MCP_ALIAS, "-s", "local"], { encoding: "utf8" });
 
   const added = runClaude([
-    "mcp", "add", "--scope", "local", "galy",
+    "mcp", "add", "--scope", "local", MCP_ALIAS,
     "--transport", "http", url,
     "--header", `Authorization: Bearer ${token}`,
   ], { encoding: "utf8" });
@@ -141,52 +214,62 @@ function registerMcp(haveClaude, endpoint, token) {
   if (added.status !== 0) {
     warn(`the Claude CLI refused the registration: ${(added.stderr || added.stdout || "").trim().slice(0, 200)}`);
     console.log("    Register it by hand:");
-    console.log(`      claude mcp add --scope local galy --transport http ${url} \\`);
-    console.log(`        --header "Authorization: Bearer <your-token>"`);
+    manual();
     return;
   }
-  ok(`galy → ${url} (local scope: this project only, nothing committed).`);
+  ok(`${MCP_ALIAS} → ${url} (local scope: this project only, nothing committed).`);
 
   // A second definition of the same name is the failure that looks like nothing: the local
-  // one wins, and whichever the user thought they were editing sits there being ignored.
+  // one wins, and whichever the user thought they were editing sits there being ignored. A
+  // definition under the FORMER alias is the opposite failure, and just as quiet: both answer,
+  // and the agent sees every tool twice.
   const projectConfig = join(process.cwd(), ".mcp.json");
   if (existsSync(projectConfig)) {
     try {
       const parsed = JSON.parse(readFileSync(projectConfig, "utf8"));
-      if (parsed?.mcpServers?.galy) {
-        warn(".mcp.json also declares a server named `galy`. The local one now wins.");
-        console.log("    Keep one of the two:  claude mcp remove galy -s project");
+      if (parsed?.mcpServers?.[MCP_ALIAS]) {
+        warn(`.mcp.json also declares a server named \`${MCP_ALIAS}\`. The local one now wins.`);
+        console.log(`    Keep one of the two:  claude mcp remove ${MCP_ALIAS} -s project`);
+      }
+      if (parsed?.mcpServers?.[FORMER_MCP_ALIAS]) {
+        warn(`.mcp.json declares a server named \`${FORMER_MCP_ALIAS}\` — the alias before the rename. Your agent will see every tool twice.`);
+        console.log(`    Remove it:  claude mcp remove ${FORMER_MCP_ALIAS} -s project`);
       }
     } catch { /* an unreadable .mcp.json is not this command's problem */ }
   }
 }
 
-// (c) Write .galy/config.json for the CLI, and make sure it is gitignored.
+// (c) Write .bg/config.json for the CLI, and make sure it is gitignored.
 function writeConfig(endpoint, token) {
-  step("Writing local config for the `galy` CLI");
-  const dir = join(process.cwd(), ".galy");
+  step(`Writing local config for the \`${MCP_ALIAS}\` CLI`);
+  const dir = join(process.cwd(), CONFIG_DIR);
   mkdirSync(dir, { recursive: true });
   const path = join(dir, "config.json");
   writeFileSync(path, JSON.stringify({ endpoint, token }, null, 2) + "\n", "utf8");
   ok(`${path}`);
 
+  // A token written before the rename is not deleted — the CLI still reads it, after the new
+  // folder — but it is named: a credential nobody remembers is the one that never gets rotated.
+  const former = join(process.cwd(), FORMER_CONFIG_DIR, "config.json");
+  if (existsSync(former)) warn(`${former} is from before the rename; ${CONFIG_DIR}/ is read first. Delete it when you like.`);
+
   const gitignore = join(process.cwd(), ".gitignore");
   const hasGit = existsSync(join(process.cwd(), ".git"));
   if (existsSync(gitignore)) {
     const body = readFileSync(gitignore, "utf8");
-    // Only a directory-wide rule counts. An older `.galy/config.json` line is NOT enough: it
+    // Only a directory-wide rule counts. An older `.bg/config.json` line is NOT enough: it
     // leaves every other file in there tracked, which is how the mirror would get committed.
     const ignored = body.split(/\r?\n/).some((l) => {
       const t = l.trim();
-      return t === ".galy" || t === ".galy/" || t === "/.galy" || t === "/.galy/";
+      return t === CONFIG_DIR || t === `${CONFIG_DIR}/` || t === `/${CONFIG_DIR}` || t === `/${CONFIG_DIR}/`;
     });
-    if (ignored) ok(".galy/ already gitignored.");
+    if (ignored) ok(`${GITIGNORE_LINE} already gitignored.`);
     else { appendFileSync(gitignore, `${body.endsWith("\n") ? "" : "\n"}${GITIGNORE_LINE}\n`); ok(`added ${GITIGNORE_LINE} to .gitignore.`); }
   } else if (hasGit) {
     writeFileSync(gitignore, `${GITIGNORE_LINE}\n`, "utf8");
     ok(`created .gitignore with ${GITIGNORE_LINE}.`);
   } else {
-    warn("no .gitignore and no git repo here — make sure nothing in .galy/ is ever committed.");
+    warn(`no .gitignore and no git repo here — make sure nothing in ${GITIGNORE_LINE} is ever committed.`);
   }
 }
 
@@ -203,7 +286,7 @@ function writeConfig(endpoint, token) {
 //             the MCP route, on an image older than the profile fix.
 //
 // And it is /mcp we prove, not /api/pm. Those are two different doors: the REST one is what the
-// `galy` CLI uses, the MCP one is what the ASSISTANT uses — the whole point of this command.
+// `bg` CLI uses, the MCP one is what the ASSISTANT uses — the whole point of this command.
 // Testing only the first announced "token accepted" on instances where the agent would then
 // have found no tool at all, which is the single outcome this script exists to rule out.
 async function smoke(endpoint, token) {
@@ -293,13 +376,13 @@ async function main() {
   writeConfig(endpoint, token);
   await smoke(endpoint, token);
 
-  // LE DOSSIER EST NOMMÉ DANS LA CONCLUSION, et pas seulement dans les étapes au-dessus.
-  // `claude mcp add --scope local` et `.galy/config.json` sont tous deux attachés au dossier
-  // courant : lancée ailleurs qu'à la racine du dépôt où le développeur travaille, cette
-  // commande installe, enregistre, teste la connexion et annonce sa réussite pour un projet
-  // qui n'est pas le sien. Rien ne la contredit avant l'agent qui, un quart d'heure plus
-  // tard, ne trouve aucun outil. La ligne du succès est celle qu'on lit : c'est donc elle
-  // qui doit porter de quoi voir l'erreur au moment où elle se commet.
+  // THE DIRECTORY IS NAMED IN THE CONCLUSION, not only in the steps above. `claude mcp add
+  // --scope local` and `.bg/config.json` are both attached to the current directory: run
+  // anywhere but at the root of the repository the developer works in, this command installs,
+  // registers, tests the connection and announces success for a project that is not theirs.
+  // Nothing contradicts it until the agent that, a quarter of an hour later, finds no tool at
+  // all. The success line is the one that gets read — so it is the one that has to carry what
+  // shows the mistake at the moment it is made.
   console.log(`\n✅ Assistant connected in ${process.cwd()} — Galy never sees your code.`);
   console.log("   Reopen Claude Code THERE: a server declared while it was running is only seen");
   console.log("   at the next start. It will then tell you where your practices stand.\n");

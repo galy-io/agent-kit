@@ -61,7 +61,7 @@
     }
   },
   "rest_api": {
-    "description": "The REST surface the `galy` CLI uses (gooal PmContentController), same Bearer auth. Read side only + the markdown body round-trip. Content bodies are raw markdown whose sections are delimited by <!-- @field <name> --> and composed/parsed server-side.",
+    "description": "The REST surface the `bg` CLI uses (gooal PmContentController), same Bearer auth. Read side only + the markdown body round-trip. Content bodies are raw markdown whose sections are delimited by <!-- @field <name> --> and composed/parsed server-side.",
     "base": "https://<your-workspace>.galy.cloud",
     "routes": [
       {
@@ -94,7 +94,7 @@
   },
   "conventions": {
     "return_envelope": "Every tool returns a JSON string { success: bool, ... } and { success: false, error: string } on failure.",
-    "bodies": "Long markdown bodies (brief problem/vision, spec executive summary/problem/solution) are never passed as tool arguments — read and write them with the `galy content pull|push <type> <id>` CLI. Tools carry metadata only (title, phases, status, risks).",
+    "bodies": "Long markdown bodies (brief problem/vision, spec executive summary/problem/solution) are never passed as tool arguments — read and write them with the `bg content pull|push <type> <id>` CLI. Tools carry metadata only (title, phases, status, risks).",
     "forbidden_fields": "No tool declares a parameter named code, diff, patch, file_content or source_code. The flow is outward-only."
   },
   "tools": [
@@ -412,7 +412,7 @@
     {
       "name": "feature_brief_create",
       "kind": "write",
-      "description": "Create a new feature brief (business framing: title, domain, objective). Returns the new brief id. Write the body (problem/vision/executive summary) with `galy content push feature-brief <id>`, not as arguments.",
+      "description": "Create a new feature brief (business framing: title, domain, objective). Returns the new brief id. Write the body (problem/vision/executive summary) with `bg content push feature-brief <id>`, not as arguments.",
       "params": [
         {
           "name": "title",
@@ -604,7 +604,7 @@
     {
       "name": "feature_spec_create",
       "kind": "write",
-      "description": "Create a technical spec under a brief (1..N specs per brief). Write the body with `galy content push feature-spec <id>`, not as arguments.",
+      "description": "Create a technical spec under a brief (1..N specs per brief). Write the body with `bg content push feature-spec <id>`, not as arguments.",
       "params": [
         {
           "name": "featureBriefId",

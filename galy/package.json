@@ -1,10 +1,10 @@
 {
-  "name": "@galy/agent-kit",
+  "name": "@b-galy/agent-kit",
   "description": "Galy project-management kit for your coding agent — strategy, briefs and specs driven by your own assistant. Galy never sees your code.",
   "type": "module",
   "private": true,
   "bin": {
-    "galy": "./bin/galy.mjs"
+    "bg": "./bin/bg.mjs"
   },
   "scripts": {
     "conformance": "node contract/conformance/runner.mjs"

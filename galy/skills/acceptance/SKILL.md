@@ -1,7 +1,7 @@
 ---
 name: acceptance
 description: Run an acceptance pass on a running feature — you fire remarks in rapid succession while you click through the product, each one is written to a local queue the instant it lands and then pushed to Galy, then coded one at a time in the order received, one commit per remark, a single PR. Trivia is decided on the spot; a real product decision parks without stopping the queue. Ends at "PR ready"; it never merges.
-allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Skill, mcp__galy__whoami, mcp__galy__acceptance_open, mcp__galy__acceptance_add_remark, mcp__galy__acceptance_list, mcp__galy__acceptance_claim_next, mcp__galy__acceptance_resolve, mcp__galy__acceptance_park, mcp__galy__acceptance_answer, mcp__galy__acceptance_set_pr, mcp__galy__acceptance_close
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Skill, mcp__bg__whoami, mcp__bg__acceptance_open, mcp__bg__acceptance_add_remark, mcp__bg__acceptance_list, mcp__bg__acceptance_claim_next, mcp__bg__acceptance_resolve, mcp__bg__acceptance_park, mcp__bg__acceptance_answer, mcp__bg__acceptance_set_pr, mcp__bg__acceptance_close
 ---
 
 # acceptance — fire remarks, drain them one at a time, one PR
@@ -25,7 +25,7 @@ Each remark is then implemented **in the order received**: one commit per item, 
 
 ## The queue: the file first, then Galy
 
-One file, `.galy/acceptance/<session>.json`, in the repo you are working in. `.galy/` is gitignored
+One file, `.bg/acceptance/<session>.json`, in the repo you are working in. `.bg/` is gitignored
 (`connect` makes sure of it). The pass and its remarks also live in Galy, where anyone can read them
 back months later — but **the file is written first, always**.
 

@@ -1,7 +1,8 @@
-# Local credentials — never committed
-.galy/config.json
+# Local credentials — never committed. `.galy/` is the folder's former name, still read as a fallback.
+.bg/
+.galy/
 
-# Ephemeral content buffers pulled/pushed by the galy CLI
+# Ephemeral content buffers pulled/pushed by the bg CLI
 .tmp/
 
 # Node

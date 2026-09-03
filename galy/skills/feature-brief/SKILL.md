@@ -1,6 +1,6 @@
 ---
 name: feature-brief
-description: Frame a business need into a Galy brief — problem, vision, user stories, success criteria — attached to an objective. Interactive discovery with targeted questions; writes the brief via the Galy MCP and its body via the galy CLI. This is the WHAT and WHY, never the HOW (that is feature-spec).
+description: Frame a business need into a Galy brief — problem, vision, user stories, success criteria — attached to an objective. Interactive discovery with targeted questions; writes the brief via the Galy MCP and its body via the bg CLI. This is the WHAT and WHY, never the HOW (that is feature-spec).
 ---
 
 # feature-brief — frame a business need
@@ -29,22 +29,22 @@ buffer synced by the CLI, never passed as a tool argument.
 
 ## Steps
 
-1. **Identity + objective.** `mcp__galy__whoami` for the userId. Pick the objective the need serves —
-   invoke the `strategy` skill or `mcp__galy__strategy_navigate_children` to find it. A brief with no
+1. **Identity + objective.** `mcp__bg__whoami` for the userId. Pick the objective the need serves —
+   invoke the `strategy` skill or `mcp__bg__strategy_navigate_children` to find it. A brief with no
    objective has no reason to exist: refuse to create one without it.
 2. **Discovery.** Ask only what you cannot infer: who is the user, what breaks today, what "better"
    looks like, how you would know it worked. Keep it to a handful of questions. Announce the domain you
    inferred in one line and continue.
 3. **Create the brief (metadata only):**
-   `mcp__galy__feature_brief_create(title, domain, objectiveId, ownerUserId=<userId>, nextFollowupDate?)`
+   `mcp__bg__feature_brief_create(title, domain, objectiveId, ownerUserId=<userId>, nextFollowupDate?)`
    → capture `brief_id`. Never pass the body as an argument.
-4. **Write the body via the CLI.** `galy content pull feature-brief <brief_id>` to seed the buffer,
+4. **Write the body via the CLI.** `bg content pull feature-brief <brief_id>` to seed the buffer,
    edit `.tmp/galy-content/feature-brief/<brief_id>.md` (fields `problem`, `vision`, `executive` —
-   executive ≤ 375 words, readable without internal jargon), then `galy content push feature-brief <brief_id>`.
-5. **User stories** (P0 first): `mcp__galy__feature_brief_add_user_story(briefId, persona, action, benefit, priority)`.
+   executive ≤ 375 words, readable without internal jargon), then `bg content push feature-brief <brief_id>`.
+5. **User stories** (P0 first): `mcp__bg__feature_brief_add_user_story(briefId, persona, action, benefit, priority)`.
 6. **Business success criteria:** a brief carries no acceptance test of its own — that verb belongs
    to specs. Capture measurable outcomes as **business follow-up checks** instead —
-   `mcp__galy__followup_check_add(featureBriefId=<brief_id>, checkType="business", title, followupPromptMd=<outcome + pass/fail threshold>, scheduleOffsetDays=<J+N>, onFailAction="create_spec")`.
+   `mcp__bg__followup_check_add(featureBriefId=<brief_id>, checkType="business", title, followupPromptMd=<outcome + pass/fail threshold>, scheduleOffsetDays=<J+N>, onFailAction="create_spec")`.
    See `${CLAUDE_PLUGIN_ROOT}/instructions/followup-conventions.md`.
 
 ## Confirmation
