@@ -13,7 +13,9 @@
 //   c) writes .bg/config.json { endpoint, token } for the `bg` CLI, and makes sure the whole
 //      .bg/ directory is gitignored — neither the token nor the workflow mirror, which carries
 //      a consent decision, ever lands in a committable file;
-//   d) smoke-tests the endpoint (GET /api/pm/search?q=ping) with the token.
+//   d) smoke-tests the endpoint (GET /api/pm/search?q=ping) with the token;
+//   e) installs the status line that names the work in progress under the prompt, keeping
+//      any status line already configured — `--no-statusline` skips it.
 //
 // Why the local scope and not an env var. The kit used to ship a .mcp.json holding one
 // hardcoded address and `Bearer ${GALY_TOKEN}`. Galy is multi-tenant: every workspace
@@ -29,6 +31,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 
 const MARKETPLACE = "b-galy/agent-kit";
 
@@ -95,6 +98,7 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === "--endpoint") { out.endpoint = argv[++i]; }
     else if (a === "-h" || a === "--help") { out.help = true; }
+    else if (a === "--no-statusline") { out.statusline = false; }
     else out._.push(a);
   }
   return out;
@@ -111,6 +115,7 @@ const HELP = `galy-setup — connect your agent to your Galy workspace
 
   <token>       your Galy API token
   --endpoint    the address of your workspace
+  --no-statusline  do not touch the status line under your prompt
 
 Both are on one page in Galy: Settings → Connect your assistant. It prints this exact
 command, address already filled in — copy it from there rather than typing it.
@@ -356,6 +361,34 @@ async function smoke(endpoint, token) {
   ok("token accepted — your assistant can reach this workspace.");
 }
 
+/**
+ * e) The row under the prompt: the specs being coded and the briefs cleared for a spec, named
+ * and clickable. Best-effort like every other step, and never destructive — a status line
+ * already configured is kept and printed above this one, so nobody loses the row they wrote.
+ */
+function installStatusLine(endpoint, token) {
+  step("Installing the status line that names your work in progress");
+  const script = fileURLToPath(new URL("../galy/statusline/bg-statusline.mjs", import.meta.url));
+  if (!existsSync(script)) {
+    warn("no status line script in this copy of the kit — skipped, nothing else is affected.");
+    return;
+  }
+  // The address and the token are handed over rather than resolved: this runs in the same
+  // breath as the registration, and the resolution it would use is only true afterwards.
+  const run = spawnSync(process.execPath, [script, "--install"], {
+    encoding: "utf8",
+    env: { ...process.env, GALY_ENDPOINT: endpoint, GALY_TOKEN: token },
+  });
+  if (run.status !== 0) {
+    const why = String(run.stderr || "").trim() || "unknown error";
+    warn(`status line not installed (${why}) — nothing else is affected.`);
+    return;
+  }
+  ok(String(run.stdout || "").trim() || "installed.");
+  const shim = join(process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"), "bg-statusline.mjs");
+  ok(`to remove it: node "${shim}" --uninstall`);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) { console.log(HELP); return; }
@@ -375,6 +408,7 @@ async function main() {
   registerMcp(haveClaude, endpoint, token);
   writeConfig(endpoint, token);
   await smoke(endpoint, token);
+  if (args.statusline !== false) installStatusLine(endpoint, token);
 
   // THE DIRECTORY IS NAMED IN THE CONCLUSION, not only in the steps above. `claude mcp add
   // --scope local` and `.bg/config.json` are both attached to the current directory: run

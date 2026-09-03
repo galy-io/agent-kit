@@ -91,6 +91,11 @@ and on the screen, together.
 It registers the MCP endpoint for **this project only**, writes `.bg/config.json` for the `bg` CLI,
 makes sure that file is gitignored, and tests the connection before claiming success.
 
+It also installs the **status line**: one row under the prompt naming the specs in progress and the
+briefs ready for a spec, each one clickable into the workspace. A status line already configured is
+kept and printed above it, never replaced. `--no-statusline` skips the step, and
+`node "<config dir>/bg-statusline.mjs" --uninstall` puts back exactly what was there before.
+
 **Never run it yourself with a token the user pasted into the conversation.** Ask them to run it, or to
 run it with `!` in front so the shell handles the value and it never lands in a transcript. A token in a
 conversation is a token in a log, in a backup, and in whatever the transcript is later fed to.
