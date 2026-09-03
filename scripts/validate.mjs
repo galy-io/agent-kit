@@ -15,10 +15,12 @@
 //      machine. A hardcoded host does not fail loudly either — it authenticates nobody and
 //      reads as a bad token.
 //
-//   3. NO STALE REPOSITORY NAME. The repository was renamed from `claude-kit` to `agent-kit`.
-//      GitHub still redirects the old name, which is exactly what makes it dangerous: everything
+//   3. NO STALE REPOSITORY NAME. The repository was renamed from `claude-kit` to `agent-kit`,
+//      then its organisation from `galy-io` to `b-galy` when the brand became B.Galy. GitHub
+//      still redirects both old names, which is exactly what makes them dangerous: everything
 //      keeps working, so nobody aligns anything, and the redirection breaks the day someone
-//      creates a repository under the freed name.
+//      creates a repository under the freed name. `galy-io` survives only as an empty
+//      placeholder organisation that holds the redirect — a courtesy, never an address to publish.
 //
 //   4. NO COMMAND THAT DOES NOT EXIST. `npx galy-setup` was distributed by the `connect` skill
 //      while the package was published on no registry: npm answered `E404 Not Found`, and the
@@ -93,14 +95,18 @@ const FORBIDDEN = [
     why: "an instance address hardcoded in a published artefact. Galy is multi-tenant: the address travels with the token, never in the repository.",
   },
   {
-    pattern: /galy-io\/claude-kit/,
-    why: "the repository's former name. GitHub still redirects it, and that redirection is a silent dependency: it breaks the day anyone creates a repository under that name. Publish `galy-io/agent-kit`.",
+    pattern: /(galy-io|b-galy)\/claude-kit/,
+    why: "the repository's former name. GitHub still redirects it, and that redirection is a silent dependency: it breaks the day anyone creates a repository under that name. Publish `b-galy/agent-kit`.",
+  },
+  {
+    pattern: /\bgaly-io\b/,
+    why: "the organisation's former name. It became `b-galy` with the brand, and `galy-io` is now an empty placeholder organisation whose only job is to hold the redirect. Publish `b-galy/agent-kit`.",
   },
   {
     // Ancree en debut de ligne : c'est la commande DONNEE A TAPER qu'on interdit, jamais la
     // phrase qui explique pourquoi il ne faut pas la taper.
     pattern: /^\s*\$?\s*npx\s+(-y\s+)?galy-setup\b/m,
-    why: "`npx galy-setup` — that package is published on no registry and npm answers E404. Use `npx -y github:galy-io/agent-kit`.",
+    why: "`npx galy-setup` — that package is published on no registry and npm answers E404. Use `npx -y github:b-galy/agent-kit`.",
   },
 ];
 
