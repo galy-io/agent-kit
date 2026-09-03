@@ -38,6 +38,11 @@ const SHIM = join(CLAUDE_DIR, "bg-statusline.mjs");
 const SETTINGS = join(CLAUDE_DIR, "settings.json");
 const TTL_MS = 180_000;
 
+// The harness cancels an in-flight status line by closing the pipe it reads us on.
+// Writing into it then raises EPIPE, and an unhandled one prints a stack trace exactly
+// where the row belongs — the one place on the screen a crash is certain to be read.
+process.stdout.on("error", () => {});
+
 const ESC = "\x1b";
 const DIM = `${ESC}[0;90m`;
 const TEXT = `${ESC}[0;36m`;
