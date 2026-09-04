@@ -1,10 +1,21 @@
 #!/usr/bin/env node
-// bg-statusline — the work in progress, on the row under the prompt.
+// bg-statusline — what this working copy has in hand, on the row under the prompt.
 //
-// Prints one line naming the specs being coded and the briefs cleared for a spec,
-// each one a clickable link into the workspace that owns it. Nothing here is
-// specific to one workspace: the address and the token are resolved the way the
-// `bg` CLI resolves them, so the same script serves every B.Galy account.
+// Prints one line naming the specs and briefs THIS working copy has in hand, each
+// one a clickable link into the workspace that owns it. Nothing here is specific to
+// one workspace: the address and the token are resolved the way the `bg` CLI
+// resolves them, so the same script serves every B.Galy account.
+//
+// What the row is NOT, and used to be: the workspace's queue — every spec in progress
+// and every brief cleared for a spec. On a workstation running ten worktrees that row
+// was the same in all ten, and it was already full before any work had started. It
+// answered a question nobody had asked, in the one place where the answer to "what am
+// I on?" belongs, which is worse than answering nothing: a queue read as a working
+// copy's own work is read wrong every time.
+//
+// What a copy holds is not deduced here: `hooks/bg-work.mjs` writes it beside the code,
+// from the claims and the writes the session actually makes. Without that hook the row
+// stays empty, which is the right way for it to be wrong.
 //
 //   node bg-statusline.mjs             render (reads a cache, never the network)
 //   node bg-statusline.mjs --install   wire it into the harness, keeping any status line already there
@@ -17,6 +28,10 @@
 // one detached refresh per TTL serves every session on the machine. The stamp is
 // claimed BEFORE the refresh is spawned: nine sessions then skip instead of
 // piling onto the same address at the same instant.
+//
+// What it holds is the workspace's NAMES, not a finished row. The row differs from one
+// working copy to the next; the names do not. So one fetch still serves the whole
+// machine, and each session draws its own line out of it.
 
 import { spawn, execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -31,8 +46,12 @@ const HOME = homedir();
 // harness does not read — and say it succeeded.
 const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(HOME, ".claude");
 const CACHE_DIR = join(tmpdir(), "bg-statusline");
-const CACHE = join(CACHE_DIR, "work");
-const STAMP = join(CACHE_DIR, "work.stamp");
+const CATALOG = join(CACHE_DIR, "catalog.json");
+const STAMP = join(CACHE_DIR, "catalog.stamp");
+// A rendered row and its stamp, from when the row was the workspace's queue. Cleared
+// rather than left behind: a stale file in a folder named after this script is a false
+// lead the first time anyone comes here to see why a row says what it says.
+const LEGACY = [join(CACHE_DIR, "work"), join(CACHE_DIR, "work.stamp")];
 const CONFIG = join(CLAUDE_DIR, "bg-statusline.json");
 const SHIM = join(CLAUDE_DIR, "bg-statusline.mjs");
 const SETTINGS = join(CLAUDE_DIR, "settings.json");
@@ -139,6 +158,44 @@ function credentials(cwd) {
   return { base: endpoint.replace(/\/+$/, "").replace(/\/mcp$/i, ""), token };
 }
 
+// ── What this working copy has in hand ────────────────────────────────────
+// A worktree is a piece of work, and this row belongs to it. Nothing in a repository
+// says which specs and briefs those are, and asking the workspace cannot answer it:
+// two worktrees of the same repository share an account and a queue, and differ only
+// in what each one is doing. So the answer is written where the difference lives —
+// beside the code, in the copy's own `.bg/work.json`, by the hook that watches what
+// the session writes to the workspace.
+//
+// The climb stops at the first `.git` and deliberately does NOT go on to the main
+// checkout the way the credential search does. That boundary is the whole point of the
+// row: two copies share an address and a token, they do not share a piece of work.
+function workingCopyRoot(from) {
+  let dir = resolve(from);
+  for (;;) {
+    if (existsSync(join(dir, ".git"))) return dir;   // a FILE here — a worktree — counts as much as a folder
+    const parent = dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+
+// Held work is let go explicitly, when a spec is completed. The horizon is the backstop
+// for the other ending, the one nobody signals: work put down and never picked up again.
+// Anything untouched since yesterday is no longer in hand, and one write puts it back.
+const HORIZON_MS = 86_400_000;
+
+function inHand(cwd) {
+  const empty = { specs: [], briefs: [] };
+  const root = workingCopyRoot(cwd || process.cwd());
+  if (!root) return empty;
+  let held;
+  try { held = JSON.parse(readFileSync(join(root, ".bg", "work.json"), "utf8")); } catch { return empty; }
+  const fresh = (entries) => (Array.isArray(entries) ? entries : [])
+    .filter((entry) => Number.isInteger(entry?.id) && Date.now() - Date.parse(entry?.at) < HORIZON_MS)
+    .map((entry) => entry.id);
+  return { specs: fresh(held?.specs), briefs: fresh(held?.briefs) };
+}
+
 // ── The workspace ─────────────────────────────────────────────────────────
 async function call(base, token, tool, args) {
   const response = await fetch(`${base}/mcp`, {
@@ -189,11 +246,14 @@ function measure(groups) {
   return width;
 }
 
-function render(base, specs, briefs) {
+// A name the catalog does not carry is still worth a link: a spec created a second ago
+// is exactly the one being worked on, and `#42` clicks through like any other.
+function render(catalog, held) {
   const budget = Number(process.env.BG_STATUSLINE_WIDTH || 110);
+  const named = (kind, ids) => ids.map((id) => ({ id, title: catalog?.[kind]?.[id] || `#${id}` }));
   const groups = [
-    { label: "spec", path: "specs", items: specs, taken: [], ids: [] },
-    { label: "brief", path: "briefs", items: briefs, taken: [], ids: [] },
+    { label: "spec", path: "specs", items: named("specs", held.specs), taken: [], ids: [] },
+    { label: "brief", path: "briefs", items: named("briefs", held.briefs), taken: [], ids: [] },
   ];
   for (let rank = 0; groups.some((g) => rank < g.items.length); rank += 1) {
     for (const group of groups) {
@@ -209,7 +269,7 @@ function render(base, specs, briefs) {
     }
   }
   const segments = groups.filter((g) => g.taken.length).map((g) => {
-    const parts = g.taken.map((name, i) => link(`${base}/${g.path}/${g.ids[i]}`, name));
+    const parts = g.taken.map((name, i) => link(`${catalog.base}/${g.path}/${g.ids[i]}`, name));
     const dropped = g.items.length - g.taken.length;
     const more = dropped ? ` ${DIM}+${dropped}${RESET}` : "";
     return `${DIM}${g.label}${RESET} ${parts.join(` ${DIM}·${RESET} `)}${more}`;
@@ -221,17 +281,21 @@ function render(base, specs, briefs) {
 async function refresh(cwd) {
   const creds = credentials(cwd);
   if (!creds) return 1;
+  // Every spec and every brief, with no status filter: what a copy holds is decided
+  // beside its code, and it may hold one the workspace has not started or already closed.
   const [specs, briefs] = await Promise.all([
-    call(creds.base, creds.token, "feature_spec_list", { status: "InProgress" }),
-    call(creds.base, creds.token, "feature_brief_list", { status: "Ready" }),
+    call(creds.base, creds.token, "feature_spec_list", {}),
+    call(creds.base, creds.token, "feature_brief_list", {}),
   ]);
-  const line = render(creds.base, specs.specs || [], briefs.briefs || []);
+  const named = (items) => Object.fromEntries((items || []).map((item) => [item.id, item.title]));
+  const catalog = { base: creds.base, specs: named(specs.specs), briefs: named(briefs.briefs) };
   mkdirSync(CACHE_DIR, { recursive: true });
   // Atomic: a status line may read this at any instant, and the harness cancels
   // an in-flight status line script — a half-written cache would be shown as is.
-  const temporary = `${CACHE}.${process.pid}`;
-  writeFileSync(temporary, line, "utf8");
-  renameSync(temporary, CACHE);
+  const temporary = `${CATALOG}.${process.pid}`;
+  writeFileSync(temporary, JSON.stringify(catalog), "utf8");
+  renameSync(temporary, CATALOG);
+  for (const path of LEGACY) { try { unlinkSync(path); } catch { /* nothing left over */ } }
   return 0;
 }
 
@@ -278,11 +342,17 @@ async function main() {
   try { session = JSON.parse(input); } catch { /* rendering does not need it */ }
   const cwd = session.cwd || session.workspace?.current_dir || process.cwd();
 
-  if (stale()) scheduleRefresh(cwd);
+  const held = inHand(cwd);
+  const holding = held.specs.length > 0 || held.briefs.length > 0;
+
+  // A copy that holds nothing asks the workspace nothing: there is no row to draw.
+  if (holding && stale()) scheduleRefresh(cwd);
 
   const above = chained(readConfig().chain, input);
   let line = "";
-  try { line = readFileSync(CACHE, "utf8"); } catch { /* first run */ }
+  if (holding) {
+    try { line = render(JSON.parse(readFileSync(CATALOG, "utf8")), held); } catch { /* first run */ }
+  }
 
   const rows = [above, line].filter((row) => row && row.trim());
   if (rows.length) process.stdout.write(rows.join("\n"));
@@ -368,7 +438,7 @@ function uninstall() {
     if (!settings.footerLinksRegexes.length) delete settings.footerLinksRegexes;
   }
   writeFileSync(SETTINGS, JSON.stringify(settings, null, 2) + "\n", "utf8");
-  for (const path of [SHIM, CONFIG, CACHE, STAMP]) { try { unlinkSync(path); } catch { /* already gone */ } }
+  for (const path of [SHIM, CONFIG, CATALOG, STAMP, ...LEGACY]) { try { unlinkSync(path); } catch { /* already gone */ } }
   process.stdout.write("Status line removed.\n");
   return 0;
 }
