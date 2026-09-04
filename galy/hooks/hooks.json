@@ -1,5 +1,5 @@
 {
-  "description": "Galy — hold the door on the one file every session pays for, and keep the row under the prompt on this working copy's own work.",
+  "description": "Galy — hold the door on the one file every session pays for, keep the row under the prompt on this working copy's own work, and ask once when a pull request leaves no trace.",
   "hooks": {
     "PreToolUse": [
       {
@@ -20,6 +20,17 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/bg-work.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/work-is-recorded.mjs\"",
             "timeout": 5
           }
         ]

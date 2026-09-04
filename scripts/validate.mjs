@@ -42,7 +42,7 @@
 //
 // Exit code 0 = every invariant holds, 1 = at least one does not.
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative } from "node:path";
 
@@ -168,6 +168,46 @@ for (const file of walk(ROOT)) {
   }
 }
 
+// -------------------------------------------------------- 6. every hook and its script, both ways
+//
+// The `SessionStart` hook was removed on 1 September 2026, script and wiring together, and that is
+// the right way to remove one. What this guards against is the same gesture done by halves, in
+// either direction — and both halves fail silently, which is the whole reason they need a check.
+//
+// A `hooks.json` that names a script which is not there fires nothing and says nothing: the
+// session starts, and the rule everyone believes is in force has not run once. That happened here
+// in a form nobody could see — the hook was gone while a customer-side CLAUDE.md went on
+// describing what it did.
+//
+// And a script that no event names is the mirror image: a rule that stopped applying without
+// anyone deciding it, still carrying its comment explaining why it matters.
+const hooksDir = join(ROOT, "galy", "hooks");
+const wired = new Set();
+
+try {
+  const wiring = JSON.parse(readFileSync(join(hooksDir, "hooks.json"), "utf8"));
+  for (const groups of Object.values(wiring.hooks ?? {})) {
+    for (const group of groups) {
+      for (const hook of group.hooks ?? []) {
+        const named = /hooks\/([\w.-]+\.mjs)/.exec(hook.command ?? "")?.[1];
+        if (!named) continue;
+        wired.add(named);
+        if (!existsSync(join(hooksDir, named))) {
+          fail("galy/hooks/hooks.json", `names \`${named}\`, which is not in galy/hooks/. The hook fires nothing, and says nothing.`);
+        }
+      }
+    }
+  }
+} catch (error) {
+  fail("galy/hooks/hooks.json", `cannot be read: ${error.message}`);
+}
+
+for (const script of readdirSync(hooksDir).filter((entry) => entry.endsWith(".mjs"))) {
+  if (!wired.has(script)) {
+    fail(`galy/hooks/${script}`, "is wired to no event in hooks.json — a rule that stopped applying without anyone deciding it.");
+  }
+}
+
 // ---------------------------------------------------------------------------- verdict
 if (failures.length > 0) {
   console.error(`\n✗ ${failures.length} problem(s):\n`);
@@ -175,4 +215,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`✓ ${skills.length} skills conform, no instance address, no stale repository name, no command that does not exist, no stale namespace.`);
+console.log(`✓ ${skills.length} skills conform, no instance address, no stale repository name, no command that does not exist, no stale namespace, ${wired.size} hooks wired to a script that exists.`);
