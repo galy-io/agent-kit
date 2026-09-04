@@ -14,8 +14,8 @@
 //      .bg/ directory is gitignored — neither the token nor the workflow mirror, which carries
 //      a consent decision, ever lands in a committable file;
 //   d) smoke-tests the endpoint (GET /api/pm/search?q=ping) with the token;
-//   e) installs the status line that names the work in progress under the prompt, keeping
-//      any status line already configured — `--no-statusline` skips it.
+//   e) installs the status line that names, under the prompt, what this working copy has
+//      in hand, keeping any status line already configured — `--no-statusline` skips it.
 //
 // Why the local scope and not an env var. The kit used to ship a .mcp.json holding one
 // hardcoded address and `Bearer ${GALY_TOKEN}`. Galy is multi-tenant: every workspace
@@ -362,12 +362,13 @@ async function smoke(endpoint, token) {
 }
 
 /**
- * e) The row under the prompt: the specs being coded and the briefs cleared for a spec, named
- * and clickable. Best-effort like every other step, and never destructive — a status line
- * already configured is kept and printed above this one, so nobody loses the row they wrote.
+ * e) The row under the prompt: the specs and briefs this working copy has in hand, named and
+ * clickable — empty until it holds one. Best-effort like every other step, and never
+ * destructive — a status line already configured is kept and printed above this one, so
+ * nobody loses the row they wrote.
  */
 function installStatusLine(endpoint, token) {
-  step("Installing the status line that names your work in progress");
+  step("Installing the status line that names the work this copy has in hand");
   const script = fileURLToPath(new URL("../galy/statusline/bg-statusline.mjs", import.meta.url));
   if (!existsSync(script)) {
     warn("no status line script in this copy of the kit — skipped, nothing else is affected.");

@@ -16,6 +16,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "build:codex": "node scripts/build-codex.mjs",
-    "check:codex": "node scripts/build-codex.mjs --check"
+    "check:codex": "node scripts/build-codex.mjs --check",
+    "check:statusline": "node scripts/check-statusline.mjs"
   }
 }

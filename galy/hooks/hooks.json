@@ -1,5 +1,5 @@
 {
-  "description": "Galy — hold the door on the one file every session pays for.",
+  "description": "Galy — hold the door on the one file every session pays for, and keep the row under the prompt on this working copy's own work.",
   "hooks": {
     "PreToolUse": [
       {
@@ -8,6 +8,18 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/claude-md-guard.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__.*__feature_(spec|brief)_.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/bg-work.mjs\"",
             "timeout": 5
           }
         ]
