@@ -35,6 +35,10 @@ The kit stops at PR ready by design. Wire your own merge to whatever you already
 merge queue, a required CI check, a human approval. If you want a post-ready hook (e.g. auto-merge on
 green CI), document it in your `CLAUDE.md` and trigger it from your own tooling — never from this skill.
 
+**Whatever merges, the gesture ends with the working copy given back** — the branch gone, on the
+remote and locally, and the copy on the default branch. A merge that stops at the forge's green
+leaves a copy nobody reclaims; a `Stop` hook of the kit says so, once per session.
+
 **What happens on the other side of that handoff is described, not performed, by three settings**
 stored on your Galy account beside `ship`/`auto_ship` — they say what YOUR pipeline does, so that
 a skill written for your repository never has to guess:
