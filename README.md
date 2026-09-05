@@ -251,7 +251,7 @@ The output is gitignored. It is a build artifact, not a second copy to maintain.
 .claude-plugin/marketplace.json   # marketplace entry
 galy/
   .claude-plugin/plugin.json      # plugin manifest
-  hooks/hooks.json                # PreToolUse — the guard on CLAUDE.md
+  hooks/hooks.json                # the guard on CLAUDE.md, and two Stop hooks: work recorded, slot given back
   agents/<name>.md                # the 6 subject agents the first pass dispatches
   skills/<name>/SKILL.md          # the 17 skills
   instructions/                   # shared conventions the skills reference

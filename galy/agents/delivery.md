@@ -78,11 +78,12 @@ launcher, the container definition, the documented commands — then for the **i
 agents working in parallel must not destroy each other. Shared ports, one shared database, one
 shared working directory: each is a `partial` with the reason.
 
-Three questions, and the third is the one everybody forgets:
+Four questions, and the last two are the ones everybody forgets:
 
 ```bash
 git worktree list                 # is there a pool at all, or one shared checkout?
 ls scripts/ bin/ tools/ 2>/dev/null | head -40   # is there a launcher that opens one?
+gh pr list --state merged --limit 50 --json headRefName --jq '.[].headRefName'   # which copies sit on a branch already merged?
 ```
 
 1. **Is there a pool of isolated working copies?** One checkout that every session shares is
@@ -92,8 +93,15 @@ ls scripts/ bin/ tools/ 2>/dev/null | head -40   # is there a launcher that open
    nobody uses. Look for the launcher, the desktop entry, the terminal binding.
 3. **Does that launcher update itself?** Read it. If it does not fetch and fast-forward its own
    checkout before running, every machine is frozen on the day it was installed, and a fix shipped
-   today reaches nobody. A launcher without that is a `partial`, and say which of the three is
-   missing — the fix is not the same one.
+   today reaches nobody. A launcher without that is a `partial`, and say which is missing — the
+   fix is not the same one.
+4. **Is a copy given back once its work is merged?** Cross the pool with the merged pull
+   requests: a working copy still sitting on a branch the forge shows as merged is a slot nobody
+   will reclaim — its branch is delivered, its files are clean, and every launcher reads it as
+   work in progress. Count them and say the number. Green is a pool whose copies come back by
+   the same gesture that merges — the branch deleted, the copy on the default branch; a pool
+   that relies on somebody remembering is a `partial`, and the fix is the merge skill, never a
+   reminder. A pool of copies nobody gives back is a shared checkout with extra steps.
 
 When this criterion is not green, the catalogue carries the method for putting it in place —
 the main session fetches it if the user asks. **Do not fetch it, do not propose it, do not run
@@ -134,6 +142,10 @@ what stops the next step from inventing.
 - **`merge_command`** — how a change is actually merged here: a merge queue, a button, a command
   of their own, a `gh pr merge` in a script. Read it in their files or in the merged pull
   requests; if the history shows only squash merges by a bot, that is the fact.
+- **`copy_given_back`** — what happens to the working copy and its branch once the merge is
+  done: a `--delete-branch`, a script that puts the copy back on the default branch, a launcher
+  that reclaims a delivered slot, or nothing. Read it where `merge_command` lives. `non constaté`
+  when the merge stops at the forge's green, and say so: it is the hole the merge skill closes.
 - **`delivery_commands`** — what already exists, verbatim, names only:
 
   ```bash

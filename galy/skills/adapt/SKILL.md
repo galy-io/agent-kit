@@ -204,8 +204,10 @@ hundred-odd commands, where the merge command stops *after* the merge and shippi
 call depositing a request in a queue. Take that shape — never a particular team's commands, queue
 or names, which belong to them:
 
-- **the merge skill ends at the merge**, and says so in its own first lines. Everything before it
-  — the branch, the pull request, the review — is `ship`'s job and is not repeated here.
+- **the merge skill ends at the merge** — the branch gone, on the remote and locally, and the
+  working copy back on the default branch, ready for the next piece of work — and says so in its
+  own first lines. A copy left on a delivered branch is one nobody reclaims. Everything before
+  it — the branch, the pull request, the review — is `ship`'s job and is not repeated here.
 - **the release skill is a separate call.** A step that reaches users is never a side effect of
   the step before it, even on a chain where merging happens to ship: there, the skill's job is to
   say that plainly, because the pause the team thinks it has does not exist.
@@ -220,6 +222,7 @@ Every sentence in both is anchored on a fact:
 | whether two releases can race | `release_lock` |
 | how to go back | `rollback_procedure` |
 | the command that merges | `merge_command` |
+| what gives the working copy back once merged | `copy_given_back` — a hole here is written as one, and the skill's last lines do the gesture by hand |
 
 **Where the fact came back `non constaté`, write the hole.** In place, in the skill, in the
 words a developer would use, with what it would take to fill it:
